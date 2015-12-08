@@ -1,0 +1,59 @@
+name:                  fun
+version:               0.0.8.0
+synopsis:              Utilities for a simple, implicitly typed functional
+                       language.
+description:           Project distribution for Mini Project D and E of the course on
+                       Compiler Constructionn (INFOMCCO) at Utrecht University.
+license:               BSD3
+license-file:          LICENSE
+category:              Compilers/Interpreters
+copyright:             (c) 2008-2014 Utrecht University
+author:                Stefan Holdermans <stefan@holdermans.nl>
+maintainer:            Atze Dijkstra <atze@uu.nl>
+stability:             provisional
+homepage:              http://www.cs.uu.nl/wiki/Cco/CourseSoftware
+tested-with:           GHC == 7.10.2
+build-type:            Simple
+cabal-version:         >= 1.8
+extra-source-files:    AUTHORS, README, Makefile,
+                       examples/t1.lam,
+                       examples/t1.tcrr,
+                       examples/sumtake.tcrr,
+                       src/CCO/HM/AG.ag,
+                       src/CCO/HM/AG/Base.ag,
+                       src/CCO/Core/AG.ag,
+                       src/CCO/Core/AG/Base.ag,
+                       src/CCO/Core/AG/ToCoreRun.ag,
+                       src/CCO/SystemF/AG.ag,
+                       src/CCO/SystemF/AG/Base.ag,
+                       src/CCO/SystemF/AG/Printing.ag
+
+library
+  exposed-modules:     CCO.Core
+                     , CCO.Core.AG
+                     , CCO.Core.Base
+                     , CCO.HM
+                     , CCO.HM.AG
+                     , CCO.HM.Base
+                     , CCO.HM.Lexer
+                     , CCO.HM.Parser
+                     , CCO.SystemF
+                     , CCO.SystemF.AG
+                     , CCO.SystemF.Base
+  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3
+  hs-source-dirs:      src
+
+executable parse-hm
+  main-is:             ParseHM.hs
+  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
+  hs-source-dirs:      src
+
+executable pp-systemf
+  main-is:             PpSystemF.hs
+  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
+  hs-source-dirs:      src
+
+executable pp-core
+  main-is:             PpCore.hs
+  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3, fun
+  hs-source-dirs:      src

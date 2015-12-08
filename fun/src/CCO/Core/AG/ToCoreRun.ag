@@ -1,0 +1,75 @@
+imports
+{
+import           UHC.Light.Compiler.Base.API
+import qualified UHC.Light.Compiler.CoreRun.API as CR
+}
+
+-------------------------------------------------------------------------------
+-- CoreRun generation
+-------------------------------------------------------------------------------
+
+attr Mod
+  syn crmod :: {CR.Mod}
+
+sem Mod
+  | Mod  lhs    .   crmod   =   CR.mkMod (mkHNm "Main") Nothing (length @binds.crbindl + 100) @binds.crbindl @main.crexp
+
+attr SExpL SExp
+  syn crsexpl use {++} {[]} :: {[CR.SExp]}
+
+sem SExp
+  | Int  lhs    .   crsexpl =   [CR.mkInt' @i]
+  | Var  lhs    .   crsexpl =   [CR.mkVar' $ head @x.crrefl]
+
+attr Exp
+  syn crexp :: {CR.Exp}
+attr Exp ExpL
+  syn crexpl use {++} {[]} :: {[CR.Exp]}
+
+sem Exp
+  | SExp loc    .   crexp   =   CR.mkExp (head @sexp.crsexpl)
+  | Lam  loc    .   crexp   =   CR.mkLam (length @args.crrefl) 100 @body.crexp
+  | App  loc    .   crexp   =   CR.mkApp @func.crexp @args.crsexpl
+  | Prim loc    .   crexp   =   CR.mkFFI @func       @args.crsexpl
+  | Node loc    .   crexp   =   CR.mkTup @tag        @args.crsexpl
+  | Case loc    .   crexp   =   CR.mkCase (head @sexp.crsexpl) @alts.crexpl
+  | Let  loc    .   crexp   =   CR.mkLet @lhs.stkoff @bind.crbindl @body.crexp
+  | Dbg  loc    .   crexp   =   CR.mkDbg @info
+
+sem Exp
+  | * 	 lhs	.	crexpl	=	[@crexp]
+
+attr BindL Bind
+  syn crbindl use {++} {[]} :: {[CR.Bind]}
+
+sem Bind
+  | Bind lhs    .   crbindl =   [@xexp.crexp]
+
+attr RefL Ref
+  syn crrefl use {++} {[]} :: {[CR.RRef]}
+
+sem Ref
+  | Glob  lhs   .   crrefl  =   [CR.mkGlobRef 0 @offset]
+  | Loc   lhs   .   crrefl  =   [CR.mkLocDifRef @levdiff @offset]
+
+
+-------------------------------------------------------------------------------
+-- Stack offset for Let
+-------------------------------------------------------------------------------
+
+attr Exp
+  inh stkoff :: {Int}
+attr Bind BindL
+  chn stkoff :: {Int}
+
+sem Mod
+  | Mod  binds  .   stkoff  =   0
+         main   .   stkoff  =   @binds.stkoff
+
+sem Bind
+  | Bind xexp   .   stkoff  =   0
+         lhs    .   stkoff  =   @lhs.stkoff + 1
+
+sem Exp
+  | Lam  body   .   stkoff  =   length @args.crrefl
+

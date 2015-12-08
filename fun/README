@@ -1,0 +1,6 @@
+Build
+-----
+
+First invoke make to generate .hs files out of .ag files, then use cabal to build.
+This distribution is not yet using using the cabal-uuagc plugin.
+

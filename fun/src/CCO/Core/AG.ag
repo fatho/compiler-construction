@@ -1,0 +1,31 @@
+-------------------------------------------------------------------------------
+-- |
+-- Module      :  CCO.Core.AG
+-- Copyright   :  (c) 2014 Utrecht University
+-- License     :  All rights reserved
+--
+-- Maintainer  :  atze@uu.nl
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Attribute grammar for/around CoreRun from uhc-light
+--
+-------------------------------------------------------------------------------
+
+module {CCO.Core.AG} {}
+{
+import UHC.Util.Pretty
+import UHC.Light.Compiler.Base.API    (defaultEHCOpts)
+import UHC.Light.Compiler.CoreRun.API (printModule)
+import CCO.Component
+}
+
+include "AG/Base.ag"
+include "AG/ToCoreRun.ag"
+
+{
+crprinter :: Component Mod String
+crprinter = component $ \mod -> do
+  let crmod = crmod_Syn_Mod (wrap_Mod (sem_Mod mod) Inh_Mod)
+  return $ show $ printModule defaultEHCOpts crmod
+}

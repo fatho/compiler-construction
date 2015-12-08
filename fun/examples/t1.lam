@@ -1,0 +1,5 @@
+let fv = 5 in
+ let id = \x . x in
+  id fv
+ ni
+ni
