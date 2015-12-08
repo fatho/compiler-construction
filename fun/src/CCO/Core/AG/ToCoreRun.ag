@@ -49,7 +49,7 @@ attr RefL Ref
   syn crrefl use {++} {[]} :: {[CR.RRef]}
 
 sem Ref
-  | Glob  lhs   .   crrefl  =   [CR.mkGlobRef 0 @offset]
+  | Glob  lhs   .   crrefl  =   [CR.mkModRef @offset]
   | Loc   lhs   .   crrefl  =   [CR.mkLocDifRef @levdiff @offset]
 
 
@@ -57,7 +57,7 @@ sem Ref
 -- Stack offset for Let
 -------------------------------------------------------------------------------
 
-attr Exp
+attr Exp ExpL
   inh stkoff :: {Int}
 attr Bind BindL
   chn stkoff :: {Int}
