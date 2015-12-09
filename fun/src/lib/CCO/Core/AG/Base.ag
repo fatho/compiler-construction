@@ -17,13 +17,13 @@ data Ref
          offset     :: {Int}
 
 type RefL = [Ref]
-  
+
 data SExp
   | Int  i :: {Int}
   | Var  x :: Ref
 
 type SExpL = [SExp]
-  
+
 data Exp
   | SExp sexp :: SExp
   | Lam  args :: RefL
@@ -41,7 +41,7 @@ data Exp
   | Dbg  info :: {String}
 
 type ExpL = [Exp]
-  
+
 data Bind
   | Bind x    :: Ref
          xexp :: Exp

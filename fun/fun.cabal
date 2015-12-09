@@ -40,8 +40,13 @@ library
                      , CCO.SystemF
                      , CCO.SystemF.AG
                      , CCO.SystemF.Base
-  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3
+  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3, containers
   hs-source-dirs:      src/lib
+
+executable hm-to-cr
+  main-is:             HMToCR.hs
+  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
+  hs-source-dirs:      src/hm-to-cr
 
 executable parse-hm
   main-is:             ParseHM.hs

@@ -4,44 +4,75 @@
 imports
 {
 import qualified CCO.Core.AG as CR
+import qualified Data.Map as Map
+}
+
+{
+type Environment = Map.Map Var CR.Ref
 }
 
 data HMToCR
-  | HMToCR Tm
+  | HMToCR root :: Tm
 
 attr HMToCR
   syn mod                  :: {CR.Mod}
 
 sem HMToCR
-  | HMToCR lhs.mod = undefined -- TODO: define mod
+  | HMToCR loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList @root.globalBinds
+           lhs.mod           = CR.Mod @root.exp @loc.modBinds
+           -- pass inherited attributes
+           root.level        = 0
+           root.globalBinds  = Map.empty
+           root.env          = Map.empty
+           root.offset       = 0
 
 attr Tm Tm_
-  inh levDiff              :: {Int}
+  inh env                  :: {Environment}
+  inh level                :: {Int}
+  -- offset used for globals
+  syn globalBinds          :: {Map.Map Int CR.Exp}
+  inh globalBinds          :: {Map.Map Int CR.Exp}
+  -- local offset
   inh offset               :: {Int}
   syn offset               :: {Int}
   syn exp                  :: {CR.Exp}
 
--- constructor names overlap, so we should adress constructors by module abbreviation like HM or CR instead
-{-
 sem Tm_
-  | Nat lhs.exp = CR.SExp @i
-  | Var lhs.exp = CR.SExp @x
-  | Lam lhs.exp = CR.Lam undefined @t1.exp -- TODO: what is "convert@xToRefL"?
+  | Nat lhs.exp    = CR.SExp (CR.Int @i)
+        lhs.offset = @lhs.offset + 1
 
-  | App lhs.exp = CR.App @t1.exp (expToSExpL @t2)
-        t1.offset = @lhs.offset
-        t2.offset = @lhs.offset + 1
+  | Var lhs.exp    = CR.SExp (CR.Var (varToRef @lhs.level @lhs.env @x))
+        lhs.offset = @lhs.offset + 1
 
-  | Let lhs.exp   = CR.Let (CR.Bind (CR.Loc @lhs.levDiff (@t1.offset + 1)) @t1.exp) @t2.exp
-        lhs.offset = @t1.offset + 2
+  | Lam lhs.exp    = CR.Lam [@ref] @t1.exp
+        lhs.offset = @lhs.offset + 1
+        loc.ref    = CR.Loc (@lhs.level + 1) 0 :: CR.Ref
+        t1.env     = Map.insert @x @ref @lhs.env
+        t1.level   = @lhs.level + 1
+        t1.offset  = 1 -- always takes one argument
+
+  | App lhs.exp   = CR.App @t1.exp [expToSExp @t2.exp]
+        t1.offset = 1 -- always takes one argument
         t2.offset = @lhs.offset
-        t1.offset = @t2.offset + 1
 
--- dont know if this is the right solution to the Exp to SExpL problem
+  | Let lhs.exp    = if @lhs.level == 0 then @t2.exp else CR.Let (CR.Bind @ref @t1.exp) @t2.exp
+        lhs.offset = @t2.offset
+        loc.globalOffset = Map.size @lhs.globalBinds
+        loc.ref    = if @lhs.level == 0 then CR.Glob @globalOffset else CR.Loc @lhs.level @lhs.offset :: CR.Ref
+        t2.globalBinds = if @lhs.level == 0 then Map.insert @globalOffset @t1.exp @lhs.globalBinds else @lhs.globalBinds
+        lhs.globalBinds = @t2.globalBinds
+        t1.offset  = @lhs.offset
+        t2.offset  = @t1.offset
+        t2.env     = Map.insert @x @ref @lhs.env
+
+
 {
-expToSExpL :: Tm -> CR.SExpL
-expToSExpL (Nat i) = [CR.SExp i]
-expToSExpL (Var x) = [CR.SExp x]
-expToSExpL _       = error "Tm not a SExp in App"
+expToSExp :: CR.Exp -> CR.SExp
+expToSExp (CR.SExp se) = se
+expToSExp _            = error "Exp not a SExp"
+
+varToRef :: Int -> Environment -> Var -> CR.Ref
+varToRef currentLevel env x = case env Map.! x of
+    CR.Loc bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
+    g@(CR.Glob _) -> g
 }
--}

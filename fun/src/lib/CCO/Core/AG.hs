@@ -1,6 +1,6 @@
 
 
--- UUAGC 0.9.52.1 (src/CCO/Core/AG.ag)
+-- UUAGC 0.9.52.1 (src/lib/CCO/Core/AG.ag)
 module CCO.Core.AG where
 
 import UHC.Util.Pretty
@@ -8,23 +8,23 @@ import UHC.Light.Compiler.Base.API    (defaultEHCOpts)
 import UHC.Light.Compiler.CoreRun.API (printModule)
 import CCO.Component
 
-{-# LINE 2 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+{-# LINE 2 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
 
 import           UHC.Light.Compiler.Base.API
 import qualified UHC.Light.Compiler.CoreRun.API as CR
-{-# LINE 16 "src/CCO/Core/AG.hs" #-}
+{-# LINE 16 "src/lib/CCO/Core/AG.hs" #-}
 
-{-# LINE 2 "src/CCO/Core/AG/Base.ag" #-}
+{-# LINE 2 "src/lib/CCO/Core/AG/Base.ag" #-}
 
 import qualified UHC.Light.Compiler.CoreRun.API as CR
-{-# LINE 21 "src/CCO/Core/AG.hs" #-}
-{-# LINE 26 "src/CCO/Core/AG.ag" #-}
+{-# LINE 21 "src/lib/CCO/Core/AG.hs" #-}
+{-# LINE 26 "src/lib/CCO/Core/AG.ag" #-}
 
 crprinter :: Component Mod String
 crprinter = component $ \mod -> do
   let crmod = crmod_Syn_Mod (wrap_Mod (sem_Mod mod) Inh_Mod)
   return $ show $ printModule defaultEHCOpts crmod
-{-# LINE 28 "src/CCO/Core/AG.hs" #-}
+{-# LINE 28 "src/lib/CCO/Core/AG.hs" #-}
 -- Bind --------------------------------------------------------
 data Bind = Bind (Ref) (Exp)
 -- cata
@@ -58,19 +58,19 @@ sem_Bind_Bind x_ xexp_ =
               _xexpIcrexpl :: ([CR.Exp])
               _xexpIself :: Exp
               _lhsOcrbindl =
-                  ({-# LINE 46 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 46 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_xexpIcrexp]
-                   {-# LINE 64 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 64 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _xexpOstkoff =
-                  ({-# LINE 70 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 70 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    0
-                   {-# LINE 69 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 69 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOstkoff =
-                  ({-# LINE 71 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 71 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _lhsIstkoff + 1
-                   {-# LINE 74 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 74 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   Bind _xIself _xexpIself
@@ -116,28 +116,28 @@ sem_BindL_Cons hd_ tl_ =
               _tlIself :: BindL
               _tlIstkoff :: Int
               _lhsOcrbindl =
-                  ({-# LINE 43 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 43 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _hdIcrbindl ++ _tlIcrbindl
-                   {-# LINE 122 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 122 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   (:) _hdIself _tlIself
               _lhsOself =
                   _self
               _lhsOstkoff =
-                  ({-# LINE 63 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 63 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _tlIstkoff
-                   {-# LINE 131 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 131 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _hdOstkoff =
-                  ({-# LINE 63 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 63 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _lhsIstkoff
-                   {-# LINE 136 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 136 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _tlOstkoff =
-                  ({-# LINE 63 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 63 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _hdIstkoff
-                   {-# LINE 141 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 141 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _hdIcrbindl,_hdIself,_hdIstkoff) =
                   hd_ _hdOstkoff
@@ -151,18 +151,18 @@ sem_BindL_Nil =
               _lhsOself :: BindL
               _lhsOstkoff :: Int
               _lhsOcrbindl =
-                  ({-# LINE 43 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 43 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    []
-                   {-# LINE 157 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 157 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   []
               _lhsOself =
                   _self
               _lhsOstkoff =
-                  ({-# LINE 63 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 63 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _lhsIstkoff
-                   {-# LINE 166 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 166 "src/lib/CCO/Core/AG.hs" #-}
                    )
           in  ( _lhsOcrbindl,_lhsOself,_lhsOstkoff)))
 -- Exp ---------------------------------------------------------
@@ -214,23 +214,23 @@ sem_Exp_SExp sexp_ =
               _sexpIcrsexpl :: ([CR.SExp])
               _sexpIself :: SExp
               _crexp =
-                  ({-# LINE 30 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 30 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    CR.mkExp (head _sexpIcrsexpl)
-                   {-# LINE 220 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 220 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOcrexpl =
-                  ({-# LINE 40 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 40 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_crexp]
-                   {-# LINE 225 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 225 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   SExp _sexpIself
               _lhsOself =
                   _self
               _lhsOcrexp =
-                  ({-# LINE 25 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 25 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _crexp
-                   {-# LINE 234 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 234 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _sexpIcrsexpl,_sexpIself) =
                   sexp_
@@ -250,28 +250,28 @@ sem_Exp_Lam args_ body_ =
               _bodyIcrexpl :: ([CR.Exp])
               _bodyIself :: Exp
               _crexp =
-                  ({-# LINE 31 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 31 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    CR.mkLam (length _argsIcrrefl) 100 _bodyIcrexp
-                   {-# LINE 256 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 256 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOcrexpl =
-                  ({-# LINE 40 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 40 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_crexp]
-                   {-# LINE 261 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 261 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _bodyOstkoff =
-                  ({-# LINE 74 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 74 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    length _argsIcrrefl
-                   {-# LINE 266 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 266 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   Lam _argsIself _bodyIself
               _lhsOself =
                   _self
               _lhsOcrexp =
-                  ({-# LINE 25 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 25 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _crexp
-                   {-# LINE 275 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 275 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _argsIcrrefl,_argsIself) =
                   args_
@@ -293,28 +293,28 @@ sem_Exp_App func_ args_ =
               _argsIcrsexpl :: ([CR.SExp])
               _argsIself :: SExpL
               _crexp =
-                  ({-# LINE 32 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 32 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    CR.mkApp _funcIcrexp _argsIcrsexpl
-                   {-# LINE 299 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 299 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOcrexpl =
-                  ({-# LINE 40 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 40 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_crexp]
-                   {-# LINE 304 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 304 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   App _funcIself _argsIself
               _lhsOself =
                   _self
               _lhsOcrexp =
-                  ({-# LINE 25 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 25 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _crexp
-                   {-# LINE 313 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 313 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _funcOstkoff =
-                  ({-# LINE 61 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 61 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _lhsIstkoff
-                   {-# LINE 318 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 318 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _funcIcrexp,_funcIcrexpl,_funcIself) =
                   func_ _funcOstkoff
@@ -332,23 +332,23 @@ sem_Exp_Prim func_ args_ =
               _argsIcrsexpl :: ([CR.SExp])
               _argsIself :: SExpL
               _crexp =
-                  ({-# LINE 33 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 33 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    CR.mkFFI func_       _argsIcrsexpl
-                   {-# LINE 338 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 338 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOcrexpl =
-                  ({-# LINE 40 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 40 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_crexp]
-                   {-# LINE 343 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 343 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   Prim func_ _argsIself
               _lhsOself =
                   _self
               _lhsOcrexp =
-                  ({-# LINE 25 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 25 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _crexp
-                   {-# LINE 352 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 352 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _argsIcrsexpl,_argsIself) =
                   args_
@@ -364,23 +364,23 @@ sem_Exp_Node tag_ args_ =
               _argsIcrsexpl :: ([CR.SExp])
               _argsIself :: SExpL
               _crexp =
-                  ({-# LINE 34 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 34 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    CR.mkTup tag_        _argsIcrsexpl
-                   {-# LINE 370 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 370 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOcrexpl =
-                  ({-# LINE 40 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 40 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_crexp]
-                   {-# LINE 375 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 375 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   Node tag_ _argsIself
               _lhsOself =
                   _self
               _lhsOcrexp =
-                  ({-# LINE 25 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 25 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _crexp
-                   {-# LINE 384 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 384 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _argsIcrsexpl,_argsIself) =
                   args_
@@ -399,28 +399,28 @@ sem_Exp_Case sexp_ alts_ =
               _altsIcrexpl :: ([CR.Exp])
               _altsIself :: ExpL
               _crexp =
-                  ({-# LINE 35 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 35 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    CR.mkCase (head _sexpIcrsexpl) _altsIcrexpl
-                   {-# LINE 405 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 405 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOcrexpl =
-                  ({-# LINE 40 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 40 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_crexp]
-                   {-# LINE 410 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 410 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   Case _sexpIself _altsIself
               _lhsOself =
                   _self
               _lhsOcrexp =
-                  ({-# LINE 25 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 25 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _crexp
-                   {-# LINE 419 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 419 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _altsOstkoff =
-                  ({-# LINE 61 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 61 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _lhsIstkoff
-                   {-# LINE 424 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 424 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _sexpIcrsexpl,_sexpIself) =
                   sexp_
@@ -444,33 +444,33 @@ sem_Exp_Let bind_ body_ =
               _bodyIcrexpl :: ([CR.Exp])
               _bodyIself :: Exp
               _crexp =
-                  ({-# LINE 36 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 36 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    CR.mkLet _lhsIstkoff _bindIcrbindl _bodyIcrexp
-                   {-# LINE 450 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 450 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOcrexpl =
-                  ({-# LINE 40 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 40 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_crexp]
-                   {-# LINE 455 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 455 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   Let _bindIself _bodyIself
               _lhsOself =
                   _self
               _lhsOcrexp =
-                  ({-# LINE 25 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 25 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _crexp
-                   {-# LINE 464 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 464 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _bindOstkoff =
-                  ({-# LINE 63 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 63 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _lhsIstkoff
-                   {-# LINE 469 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 469 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _bodyOstkoff =
-                  ({-# LINE 61 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 61 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _bindIstkoff
-                   {-# LINE 474 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 474 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _bindIcrbindl,_bindIself,_bindIstkoff) =
                   bind_ _bindOstkoff
@@ -485,23 +485,23 @@ sem_Exp_Dbg info_ =
               _lhsOself :: Exp
               _lhsOcrexp :: (CR.Exp)
               _crexp =
-                  ({-# LINE 37 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 37 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    CR.mkDbg info_
-                   {-# LINE 491 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 491 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _lhsOcrexpl =
-                  ({-# LINE 40 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 40 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    [_crexp]
-                   {-# LINE 496 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 496 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   Dbg info_
               _lhsOself =
                   _self
               _lhsOcrexp =
-                  ({-# LINE 25 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 25 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _crexp
-                   {-# LINE 505 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 505 "src/lib/CCO/Core/AG.hs" #-}
                    )
           in  ( _lhsOcrexp,_lhsOcrexpl,_lhsOself)))
 -- ExpL --------------------------------------------------------
@@ -537,23 +537,23 @@ sem_ExpL_Cons hd_ tl_ =
               _tlIcrexpl :: ([CR.Exp])
               _tlIself :: ExpL
               _lhsOcrexpl =
-                  ({-# LINE 27 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 27 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _hdIcrexpl ++ _tlIcrexpl
-                   {-# LINE 543 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 543 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   (:) _hdIself _tlIself
               _lhsOself =
                   _self
               _hdOstkoff =
-                  ({-# LINE 61 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 61 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _lhsIstkoff
-                   {-# LINE 552 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 552 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _tlOstkoff =
-                  ({-# LINE 61 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 61 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    _lhsIstkoff
-                   {-# LINE 557 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 557 "src/lib/CCO/Core/AG.hs" #-}
                    )
               ( _hdIcrexp,_hdIcrexpl,_hdIself) =
                   hd_ _hdOstkoff
@@ -566,9 +566,9 @@ sem_ExpL_Nil =
          (let _lhsOcrexpl :: ([CR.Exp])
               _lhsOself :: ExpL
               _lhsOcrexpl =
-                  ({-# LINE 27 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+                  ({-# LINE 27 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
                    []
-                   {-# LINE 572 "src/CCO/Core/AG.hs" #-}
+                   {-# LINE 572 "src/lib/CCO/Core/AG.hs" #-}
                    )
               _self =
                   []
@@ -607,19 +607,19 @@ sem_Mod_Mod main_ binds_ =
          _bindsIself :: BindL
          _bindsIstkoff :: Int
          _lhsOcrmod =
-             ({-# LINE 15 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 15 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               CR.mkMod (mkHNm "Main") Nothing (length _bindsIcrbindl + 100) _bindsIcrbindl _mainIcrexp
-              {-# LINE 613 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 613 "src/lib/CCO/Core/AG.hs" #-}
               )
          _bindsOstkoff =
-             ({-# LINE 66 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 66 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               0
-              {-# LINE 618 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 618 "src/lib/CCO/Core/AG.hs" #-}
               )
          _mainOstkoff =
-             ({-# LINE 67 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 67 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               _bindsIstkoff
-              {-# LINE 623 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 623 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              Mod _mainIself _bindsIself
@@ -656,9 +656,9 @@ sem_Ref_Glob offset_ =
     (let _lhsOcrrefl :: ([CR.RRef])
          _lhsOself :: Ref
          _lhsOcrrefl =
-             ({-# LINE 52 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 52 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               [CR.mkModRef offset_]
-              {-# LINE 662 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 662 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              Glob offset_
@@ -672,9 +672,9 @@ sem_Ref_Loc levdiff_ offset_ =
     (let _lhsOcrrefl :: ([CR.RRef])
          _lhsOself :: Ref
          _lhsOcrrefl =
-             ({-# LINE 53 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 53 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               [CR.mkLocDifRef levdiff_ offset_]
-              {-# LINE 678 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 678 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              Loc levdiff_ offset_
@@ -709,9 +709,9 @@ sem_RefL_Cons hd_ tl_ =
          _tlIcrrefl :: ([CR.RRef])
          _tlIself :: RefL
          _lhsOcrrefl =
-             ({-# LINE 49 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 49 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               _hdIcrrefl ++ _tlIcrrefl
-              {-# LINE 715 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 715 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              (:) _hdIself _tlIself
@@ -727,9 +727,9 @@ sem_RefL_Nil =
     (let _lhsOcrrefl :: ([CR.RRef])
          _lhsOself :: RefL
          _lhsOcrrefl =
-             ({-# LINE 49 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 49 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               []
-              {-# LINE 733 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 733 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              []
@@ -762,9 +762,9 @@ sem_SExp_Int i_ =
     (let _lhsOcrsexpl :: ([CR.SExp])
          _lhsOself :: SExp
          _lhsOcrsexpl =
-             ({-# LINE 21 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 21 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               [CR.mkInt' i_]
-              {-# LINE 768 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 768 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              Int i_
@@ -779,9 +779,9 @@ sem_SExp_Var x_ =
          _xIcrrefl :: ([CR.RRef])
          _xIself :: Ref
          _lhsOcrsexpl =
-             ({-# LINE 22 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 22 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               [CR.mkVar' $ head _xIcrrefl]
-              {-# LINE 785 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 785 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              Var _xIself
@@ -818,9 +818,9 @@ sem_SExpL_Cons hd_ tl_ =
          _tlIcrsexpl :: ([CR.SExp])
          _tlIself :: SExpL
          _lhsOcrsexpl =
-             ({-# LINE 18 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 18 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               _hdIcrsexpl ++ _tlIcrsexpl
-              {-# LINE 824 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 824 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              (:) _hdIself _tlIself
@@ -836,9 +836,9 @@ sem_SExpL_Nil =
     (let _lhsOcrsexpl :: ([CR.SExp])
          _lhsOself :: SExpL
          _lhsOcrsexpl =
-             ({-# LINE 18 "src/CCO/Core/AG/ToCoreRun.ag" #-}
+             ({-# LINE 18 "src/lib/CCO/Core/AG/ToCoreRun.ag" #-}
               []
-              {-# LINE 842 "src/CCO/Core/AG.hs" #-}
+              {-# LINE 842 "src/lib/CCO/Core/AG.hs" #-}
               )
          _self =
              []

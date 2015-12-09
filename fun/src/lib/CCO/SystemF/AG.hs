@@ -1,24 +1,24 @@
 
 
--- UUAGC 0.9.52.1 (src/CCO/SystemF/AG.ag)
+-- UUAGC 0.9.52.1 (src/lib/CCO/SystemF/AG.ag)
 module CCO.SystemF.AG where
 
-{-# LINE 2 "src/CCO/SystemF/AG/Printing.ag" #-}
+{-# LINE 2 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
 
 import CCO.Printing
-{-# LINE 10 "src/CCO/SystemF/AG.hs" #-}
+{-# LINE 10 "src/lib/CCO/SystemF/AG.hs" #-}
 
-{-# LINE 2 "src/CCO/SystemF/AG/Base.ag" #-}
+{-# LINE 2 "src/lib/CCO/SystemF/AG/Base.ag" #-}
 
 import CCO.SourcePos
-{-# LINE 15 "src/CCO/SystemF/AG.hs" #-}
-{-# LINE 53 "src/CCO/SystemF/AG/Printing.ag" #-}
+{-# LINE 15 "src/lib/CCO/SystemF/AG.hs" #-}
+{-# LINE 53 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
 
 -- | Type of precedence levels.
 type Prec = Int
-{-# LINE 20 "src/CCO/SystemF/AG.hs" #-}
+{-# LINE 20 "src/lib/CCO/SystemF/AG.hs" #-}
 
-{-# LINE 75 "src/CCO/SystemF/AG/Printing.ag" #-}
+{-# LINE 75 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
 
 -- | Pretty prints in single-line mode, given the precedence level of its
 -- immediate context, a term constructed from a binary operator of a specified
@@ -45,9 +45,9 @@ ppInfixML ctx (op, prec) l r = modifier $ l >#< ppOp >-< r
   where
     modifier doc = if prec < ctx then (lparen >#< doc >-< rparen) else doc
     ppOp         = text op
-{-# LINE 49 "src/CCO/SystemF/AG.hs" #-}
+{-# LINE 49 "src/lib/CCO/SystemF/AG.hs" #-}
 
-{-# LINE 107 "src/CCO/SystemF/AG/Printing.ag" #-}
+{-# LINE 107 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
 
 -- | Pretty prints in single-line mode, a construct involving a binder.
 ppBinderSL :: String -> Doc -> Doc -> Doc
@@ -56,13 +56,13 @@ ppBinderSL binder arg body = text binder >|< arg >|< period >#< body
 -- | Pretty prints in multiline mode, a construct involving a binder.
 ppBinderML :: String -> Doc -> Doc -> Doc
 ppBinderML binder arg body = text binder >|< arg >|< period >-< indent 2 body
-{-# LINE 60 "src/CCO/SystemF/AG.hs" #-}
+{-# LINE 60 "src/lib/CCO/SystemF/AG.hs" #-}
 
-{-# LINE 10 "src/CCO/SystemF/AG/Base.ag" #-}
+{-# LINE 10 "src/lib/CCO/SystemF/AG/Base.ag" #-}
 
 type TyVar = String    -- ^ Type of type variables. 
 type Var   = String    -- ^ Type of variables.
-{-# LINE 66 "src/CCO/SystemF/AG.hs" #-}
+{-# LINE 66 "src/lib/CCO/SystemF/AG.hs" #-}
 -- Tm ----------------------------------------------------------
 data Tm = Nat (Int)
         | Var (Var)
@@ -104,23 +104,23 @@ sem_Tm_Nat x_ =
               _lhsOself :: Tm
               _lhsOppSL :: Doc
               _ppSL =
-                  ({-# LINE 28 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 28 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    text $ show x_
-                   {-# LINE 110 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 110 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 36 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 36 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 115 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 115 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   Nat x_
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 124 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 124 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
           in  ( _lhsOppML,_lhsOppSL,_lhsOself)))
 sem_Tm_Var :: Var ->
@@ -131,23 +131,23 @@ sem_Tm_Var x_ =
               _lhsOself :: Tm
               _lhsOppSL :: Doc
               _ppSL =
-                  ({-# LINE 29 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 29 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    text x_
-                   {-# LINE 137 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 137 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 37 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 37 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 142 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 142 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   Var x_
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 151 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 151 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
           in  ( _lhsOppML,_lhsOppSL,_lhsOself)))
 sem_Tm_Lam :: Var ->
@@ -168,36 +168,36 @@ sem_Tm_Lam x_ ty_ t1_ =
               _t1IppSL :: Doc
               _t1Iself :: Tm
               _ppSL =
-                  ({-# LINE 30 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 30 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    ppBinderSL "\\" (text x_ >#< text ":" >#< _tyIppSL)
                      _t1IppSL
-                   {-# LINE 175 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 175 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 38 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 38 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL     >^<
                    ppBinderML "\\" (text x_ >#< text ":" >#< _tyIppML)
                      _t1IppML
-                   {-# LINE 182 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 182 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _tyOprec =
-                  ({-# LINE 67 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 67 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    0
-                   {-# LINE 187 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 187 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _t1Oprec =
-                  ({-# LINE 68 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 68 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    0
-                   {-# LINE 192 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 192 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   Lam x_ _tyIself _t1Iself
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 201 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 201 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               ( _tyIppML,_tyIppSL,_tyIself) =
                   ty_ _tyOprec
@@ -221,34 +221,34 @@ sem_Tm_App t1_ t2_ =
               _t2IppSL :: Doc
               _t2Iself :: Tm
               _ppSL =
-                  ({-# LINE 32 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 32 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    ppInfixSL _lhsIprec ("", 10) _t1IppSL _t2IppSL
-                   {-# LINE 227 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 227 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 41 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 41 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL     >^<
                    ppInfixML _lhsIprec ("", 10) _t1IppML _t2IppML
-                   {-# LINE 233 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 233 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _t1Oprec =
-                  ({-# LINE 69 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 69 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    10
-                   {-# LINE 238 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 238 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _t2Oprec =
-                  ({-# LINE 70 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 70 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    11
-                   {-# LINE 243 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 243 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   App _t1Iself _t2Iself
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 252 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 252 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               ( _t1IppML,_t1IppSL,_t1Iself) =
                   t1_ _t1Oprec
@@ -268,29 +268,29 @@ sem_Tm_TyLam a_ t1_ =
               _t1IppSL :: Doc
               _t1Iself :: Tm
               _ppSL =
-                  ({-# LINE 33 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 33 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    ppBinderSL "/\\" (text a_) _t1IppSL
-                   {-# LINE 274 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 274 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 43 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 43 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL     >^<
                    ppBinderML "/\\" (text a_) _t1IppML
-                   {-# LINE 280 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 280 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _t1Oprec =
-                  ({-# LINE 71 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 71 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    0
-                   {-# LINE 285 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 285 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   TyLam a_ _t1Iself
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 294 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 294 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               ( _t1IppML,_t1IppSL,_t1Iself) =
                   t1_ _t1Oprec
@@ -312,35 +312,35 @@ sem_Tm_TyApp t1_ ty_ =
               _tyIppSL :: Doc
               _tyIself :: Ty
               _ppSL =
-                  ({-# LINE 34 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 34 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    ppInfixSL _lhsIprec ("", 10) _t1IppSL (brackets _tyIppSL)
-                   {-# LINE 318 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 318 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 45 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 45 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL     >^<
                    ppInfixML _lhsIprec ("", 10) _t1IppML
                      (lbracket >#< _tyIppML >-< rbracket)
-                   {-# LINE 325 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 325 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _t1Oprec =
-                  ({-# LINE 72 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 72 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    9
-                   {-# LINE 330 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 330 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _tyOprec =
-                  ({-# LINE 73 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 73 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    0
-                   {-# LINE 335 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 335 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   TyApp _t1Iself _tyIself
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 344 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 344 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               ( _t1IppML,_t1IppSL,_t1Iself) =
                   t1_ _t1Oprec
@@ -381,23 +381,23 @@ sem_Ty_TyNat =
               _lhsOself :: Ty
               _lhsOppSL :: Doc
               _ppSL =
-                  ({-# LINE 15 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 15 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    text "Nat"
-                   {-# LINE 387 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 387 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 20 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 20 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 392 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 392 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   TyNat
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 401 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 401 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
           in  ( _lhsOppML,_lhsOppSL,_lhsOself)))
 sem_Ty_TyVar :: TyVar ->
@@ -408,23 +408,23 @@ sem_Ty_TyVar a_ =
               _lhsOself :: Ty
               _lhsOppSL :: Doc
               _ppSL =
-                  ({-# LINE 16 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 16 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    text a_
-                   {-# LINE 414 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 414 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 21 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 21 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 419 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 419 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   TyVar a_
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 428 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 428 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
           in  ( _lhsOppML,_lhsOppSL,_lhsOself)))
 sem_Ty_Arr :: T_Ty ->
@@ -444,34 +444,34 @@ sem_Ty_Arr ty1_ ty2_ =
               _ty2IppSL :: Doc
               _ty2Iself :: Ty
               _ppSL =
-                  ({-# LINE 17 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 17 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    ppInfixSL _lhsIprec ("->", 0) _ty1IppSL _ty2IppSL
-                   {-# LINE 450 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 450 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 22 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 22 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL     >^<
                    ppInfixML _lhsIprec ("->", 0) _ty1IppML _ty2IppML
-                   {-# LINE 456 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 456 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _ty1Oprec =
-                  ({-# LINE 62 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 62 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    1
-                   {-# LINE 461 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 461 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _ty2Oprec =
-                  ({-# LINE 63 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 63 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    0
-                   {-# LINE 466 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 466 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   Arr _ty1Iself _ty2Iself
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 475 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 475 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               ( _ty1IppML,_ty1IppSL,_ty1Iself) =
                   ty1_ _ty1Oprec
@@ -491,29 +491,29 @@ sem_Ty_Forall a_ ty1_ =
               _ty1IppSL :: Doc
               _ty1Iself :: Ty
               _ppSL =
-                  ({-# LINE 18 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 18 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    ppBinderSL "forall " (text a_) _ty1IppSL
-                   {-# LINE 497 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 497 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _lhsOppML =
-                  ({-# LINE 24 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 24 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL     >^<
                    ppBinderML "forall " (text a_) _ty1IppML
-                   {-# LINE 503 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 503 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _ty1Oprec =
-                  ({-# LINE 64 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 64 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    0
-                   {-# LINE 508 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 508 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               _self =
                   Forall a_ _ty1Iself
               _lhsOself =
                   _self
               _lhsOppSL =
-                  ({-# LINE 11 "src/CCO/SystemF/AG/Printing.ag" #-}
+                  ({-# LINE 11 "src/lib/CCO/SystemF/AG/Printing.ag" #-}
                    _ppSL
-                   {-# LINE 517 "src/CCO/SystemF/AG.hs" #-}
+                   {-# LINE 517 "src/lib/CCO/SystemF/AG.hs" #-}
                    )
               ( _ty1IppML,_ty1IppSL,_ty1Iself) =
                   ty1_ _ty1Oprec
