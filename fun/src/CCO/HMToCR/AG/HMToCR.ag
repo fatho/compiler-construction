@@ -1,0 +1,38 @@
+-------------------------------------------------------------------------------
+-- Attr grammar
+-------------------------------------------------------------------------------
+ 
+attr Tm
+  syn mod                  :: Mod
+  
+sem Tm
+  | Tm lhs.mod = Mod -- ??
+
+attr Tm Tm_  
+  inh levDiff              :: {Int}
+  inh offset               :: {Int}
+  syn offset               :: {Int}
+  syn exp                  :: Exp
+  
+-- constructor names overlap, so we should adress constructors by module abbreviation like HM or CR instead
+sem Tm_
+  | Nat lhs.exp = SExp @i
+  | Var lhs.exp = SExp @x
+  | Lam lhs.exp = Lam convert@xToRefL @t1.exp
+  
+  | App lhs.exp = App @t1.exp (expToSExpL @t2)
+        t1.offset = @lhs.offset
+        t2.offset = @lhs.offset + 1
+  
+  | Let lhs.exp   = Let (Bind (Loc @lhs.levDiff (@t1.offset + 1)) @t1.exp) @t2.exp  
+        lhs.offset = @t1.offset + 2 
+        t2.offset = @lhs.offset
+        t1.offset = @t2.offset + 1
+  
+-- dont know if this is the right solution to the Exp to SExpL problem
+{
+expToSExpL :: Tm -> SExpL
+expToSExpL (Int i) = [SExp i]
+expToSExpL (Var x) = [SExp x]
+expToSExpL _       = error "Tm not a SExp in App"
+}
