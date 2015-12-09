@@ -1,0 +1,47 @@
+-------------------------------------------------------------------------------
+-- Attr grammar
+-------------------------------------------------------------------------------
+imports
+{
+import qualified CCO.Core.AG as CR
+}
+
+data HMToCR
+  | HMToCR Tm
+
+attr HMToCR
+  syn mod                  :: {CR.Mod}
+
+sem HMToCR
+  | HMToCR lhs.mod = undefined -- TODO: define mod
+
+attr Tm Tm_
+  inh levDiff              :: {Int}
+  inh offset               :: {Int}
+  syn offset               :: {Int}
+  syn exp                  :: {CR.Exp}
+
+-- constructor names overlap, so we should adress constructors by module abbreviation like HM or CR instead
+{-
+sem Tm_
+  | Nat lhs.exp = CR.SExp @i
+  | Var lhs.exp = CR.SExp @x
+  | Lam lhs.exp = CR.Lam undefined @t1.exp -- TODO: what is "convert@xToRefL"?
+
+  | App lhs.exp = CR.App @t1.exp (expToSExpL @t2)
+        t1.offset = @lhs.offset
+        t2.offset = @lhs.offset + 1
+
+  | Let lhs.exp   = CR.Let (CR.Bind (CR.Loc @lhs.levDiff (@t1.offset + 1)) @t1.exp) @t2.exp
+        lhs.offset = @t1.offset + 2
+        t2.offset = @lhs.offset
+        t1.offset = @t2.offset + 1
+
+-- dont know if this is the right solution to the Exp to SExpL problem
+{
+expToSExpL :: Tm -> CR.SExpL
+expToSExpL (Nat i) = [CR.SExp i]
+expToSExpL (Var x) = [CR.SExp x]
+expToSExpL _       = error "Tm not a SExp in App"
+}
+-}

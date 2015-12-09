@@ -41,19 +41,19 @@ library
                      , CCO.SystemF.AG
                      , CCO.SystemF.Base
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3
-  hs-source-dirs:      src
+  hs-source-dirs:      src/lib
 
 executable parse-hm
   main-is:             ParseHM.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
-  hs-source-dirs:      src
+  hs-source-dirs:      src/parse-hm
 
 executable pp-systemf
   main-is:             PpSystemF.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
-  hs-source-dirs:      src
+  hs-source-dirs:      src/pp-systemf
 
 executable pp-core
   main-is:             PpCore.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3, fun
-  hs-source-dirs:      src
+  hs-source-dirs:      src/pp-core
