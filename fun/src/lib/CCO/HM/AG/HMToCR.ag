@@ -5,10 +5,17 @@ imports
 {
 import qualified CCO.Core.AG as CR
 import qualified Data.Map as Map
+
+import Debug.Trace
 }
 
 {
-type Environment = Map.Map Var CR.Ref
+data DeclRef
+  = DeclLoc { declLocLevel :: Int, declLocOffset :: Int}
+  | DeclGlob { declGlobOffset :: Int }
+  deriving (Eq, Ord, Show, Read)
+
+type Environment = Map.Map Var DeclRef
 }
 
 data HMToCR
@@ -27,14 +34,19 @@ sem HMToCR
            root.offset       = 0
 
 attr Tm Tm_
+  -- a mapping of all variables in scope
   inh env                  :: {Environment}
+  -- the absolute lexical level (counted from the top, first level is 0)
+  -- we are currently in.
   inh level                :: {Int}
-  -- offset used for globals
+  -- let bindings at the root of the AST are translated to global bindings
+  -- and handled by HMToCR
   syn globalBinds          :: {Map.Map Int CR.Exp}
   inh globalBinds          :: {Map.Map Int CR.Exp}
-  -- local offset
+  -- local stack offset
   inh offset               :: {Int}
   syn offset               :: {Int}
+  -- the generated expression
   syn exp                  :: {CR.Exp}
 
 sem Tm_
@@ -44,9 +56,9 @@ sem Tm_
   | Var lhs.exp    = CR.SExp (CR.Var (varToRef @lhs.level @lhs.env @x))
         lhs.offset = @lhs.offset + 1
 
-  | Lam lhs.exp    = CR.Lam [@ref] @t1.exp
+  | Lam lhs.exp    = CR.Lam [CR.Loc 0 0] @t1.exp
         lhs.offset = @lhs.offset + 1
-        loc.ref    = CR.Loc (@lhs.level + 1) 0 :: CR.Ref
+        loc.ref    = DeclLoc (@lhs.level + 1) 0
         t1.env     = Map.insert @x @ref @lhs.env
         t1.level   = @lhs.level + 1
         t1.offset  = 1 -- always takes one argument
@@ -55,15 +67,36 @@ sem Tm_
         t1.offset = 1 -- always takes one argument
         t2.offset = @lhs.offset
 
-  | Let lhs.exp    = if @lhs.level == 0 then @t2.exp else CR.Let (CR.Bind @ref @t1.exp) @t2.exp
-        lhs.offset = @t2.offset
+  | Let loc.isGlobal = @lhs.level == 0 -- are we in global scope? TODO: Better way of determining this
+        lhs.exp    =
+          if @loc.isGlobal
+              -- binding is lifted to global scope
+              then @t2.exp
+              -- local binding on the stack (in current level)
+              else CR.Let (CR.Bind (CR.Loc 0 @lhs.offset) @t1.exp) @t2.exp
+        -- next free slot for a global binding
         loc.globalOffset = Map.size @lhs.globalBinds
-        loc.ref    = if @lhs.level == 0 then CR.Glob @globalOffset else CR.Loc @lhs.level @lhs.offset :: CR.Ref
-        t2.globalBinds = if @lhs.level == 0 then Map.insert @globalOffset @t1.exp @lhs.globalBinds else @lhs.globalBinds
+        -- create ref depending on where expression is bound
+        loc.ref    =
+          if @loc.isGlobal
+            then DeclGlob @globalOffset
+            else DeclLoc @lhs.level @lhs.offset
+        -- possibly update global bindings
+        loc.newGlobalBinds =
+          if @loc.isGlobal
+            then Map.insert @globalOffset @t1.exp @lhs.globalBinds
+            else @lhs.globalBinds
+        t1.globalBinds  = @loc.newGlobalBinds
+        t2.globalBinds  = @t1.globalBinds
         lhs.globalBinds = @t2.globalBinds
+        -- provide binding to body and the bound expression (to allow recursion)
+        loc.newEnv = Map.insert @x @ref @lhs.env
+        t1.env     = @loc.newEnv
+        t2.env     = @loc.newEnv
+        -- thread offset through computation
         t1.offset  = @lhs.offset
         t2.offset  = @t1.offset
-        t2.env     = Map.insert @x @ref @lhs.env
+        lhs.offset = @t2.offset
 
 
 {
@@ -73,6 +106,6 @@ expToSExp _            = error "Exp not a SExp"
 
 varToRef :: Int -> Environment -> Var -> CR.Ref
 varToRef currentLevel env x = case env Map.! x of
-    CR.Loc bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
-    g@(CR.Glob _) -> g
+    DeclLoc bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
+    DeclGlob offset -> CR.Glob offset
 }

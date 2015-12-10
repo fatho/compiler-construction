@@ -7,18 +7,25 @@ module CCO.HM.AG where
 
 import qualified CCO.Core.AG as CR
 import qualified Data.Map as Map
-{-# LINE 11 "src/lib/CCO/HM/AG.hs" #-}
+
+import Debug.Trace
+{-# LINE 13 "src/lib/CCO/HM/AG.hs" #-}
 
 {-# LINE 2 "src/lib/CCO/HM/AG/Base.ag" #-}
 
 import CCO.SourcePos
-{-# LINE 16 "src/lib/CCO/HM/AG.hs" #-}
-{-# LINE 10 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+{-# LINE 18 "src/lib/CCO/HM/AG.hs" #-}
+{-# LINE 12 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
 
-type Environment = Map.Map Var CR.Ref
-{-# LINE 20 "src/lib/CCO/HM/AG.hs" #-}
+data DeclRef
+  = DeclLoc { declLocLevel :: Int, declLocOffset :: Int}
+  | DeclGlob { declGlobOffset :: Int }
+  deriving (Eq, Ord, Show, Read)
 
-{-# LINE 69 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+type Environment = Map.Map Var DeclRef
+{-# LINE 27 "src/lib/CCO/HM/AG.hs" #-}
+
+{-# LINE 102 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
 
 expToSExp :: CR.Exp -> CR.SExp
 expToSExp (CR.SExp se) = se
@@ -26,14 +33,14 @@ expToSExp _            = error "Exp not a SExp"
 
 varToRef :: Int -> Environment -> Var -> CR.Ref
 varToRef currentLevel env x = case env Map.! x of
-    CR.Loc bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
-    g@(CR.Glob _) -> g
-{-# LINE 32 "src/lib/CCO/HM/AG.hs" #-}
+    DeclLoc bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
+    DeclGlob offset -> CR.Glob offset
+{-# LINE 39 "src/lib/CCO/HM/AG.hs" #-}
 
 {-# LINE 10 "src/lib/CCO/HM/AG/Base.ag" #-}
 
 type Var = String    -- ^ Type of variables.
-{-# LINE 37 "src/lib/CCO/HM/AG.hs" #-}
+{-# LINE 44 "src/lib/CCO/HM/AG.hs" #-}
 -- HMToCR ------------------------------------------------------
 data HMToCR = HMToCR (Tm)
 -- cata
@@ -65,34 +72,34 @@ sem_HMToCR_HMToCR root_ =
          _rootIoffset :: Int
          _rootIself :: Tm
          _modBinds =
-             ({-# LINE 21 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+             ({-# LINE 28 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
               map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList _rootIglobalBinds
-              {-# LINE 71 "src/lib/CCO/HM/AG.hs" #-}
+              {-# LINE 78 "src/lib/CCO/HM/AG.hs" #-}
               )
          _lhsOmod =
-             ({-# LINE 22 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+             ({-# LINE 29 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
               CR.Mod _rootIexp _modBinds
-              {-# LINE 76 "src/lib/CCO/HM/AG.hs" #-}
+              {-# LINE 83 "src/lib/CCO/HM/AG.hs" #-}
               )
          _rootOlevel =
-             ({-# LINE 24 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+             ({-# LINE 31 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
               0
-              {-# LINE 81 "src/lib/CCO/HM/AG.hs" #-}
+              {-# LINE 88 "src/lib/CCO/HM/AG.hs" #-}
               )
          _rootOglobalBinds =
-             ({-# LINE 25 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+             ({-# LINE 32 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
               Map.empty
-              {-# LINE 86 "src/lib/CCO/HM/AG.hs" #-}
+              {-# LINE 93 "src/lib/CCO/HM/AG.hs" #-}
               )
          _rootOenv =
-             ({-# LINE 26 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+             ({-# LINE 33 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
               Map.empty
-              {-# LINE 91 "src/lib/CCO/HM/AG.hs" #-}
+              {-# LINE 98 "src/lib/CCO/HM/AG.hs" #-}
               )
          _rootOoffset =
-             ({-# LINE 27 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+             ({-# LINE 34 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
               0
-              {-# LINE 96 "src/lib/CCO/HM/AG.hs" #-}
+              {-# LINE 103 "src/lib/CCO/HM/AG.hs" #-}
               )
          _self =
              HMToCR _rootIself
@@ -147,39 +154,39 @@ sem_Tm_Tm pos_ t_ =
               _lhsOself =
                   _self
               _lhsOexp =
-                  ({-# LINE 38 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 50 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _tIexp
-                   {-# LINE 153 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 160 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _lhsOglobalBinds =
-                  ({-# LINE 33 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 44 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _tIglobalBinds
-                   {-# LINE 158 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 165 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _lhsOoffset =
-                  ({-# LINE 37 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 48 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _tIoffset
-                   {-# LINE 163 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 170 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _tOenv =
-                  ({-# LINE 30 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 38 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIenv
-                   {-# LINE 168 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 175 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _tOglobalBinds =
-                  ({-# LINE 34 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 45 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIglobalBinds
-                   {-# LINE 173 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 180 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _tOlevel =
-                  ({-# LINE 31 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 41 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIlevel
-                   {-# LINE 178 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 185 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _tOoffset =
-                  ({-# LINE 36 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 47 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIoffset
-                   {-# LINE 183 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 190 "src/lib/CCO/HM/AG.hs" #-}
                    )
               ( _tIexp,_tIglobalBinds,_tIoffset,_tIself) =
                   t_ _tOenv _tOglobalBinds _tOlevel _tOoffset
@@ -229,23 +236,23 @@ sem_Tm__Nat i_ =
               _lhsOself :: Tm_
               _lhsOglobalBinds :: (Map.Map Int CR.Exp)
               _lhsOexp =
-                  ({-# LINE 41 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 53 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    CR.SExp (CR.Int i_)
-                   {-# LINE 235 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 242 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _lhsOoffset =
-                  ({-# LINE 42 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 54 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIoffset + 1
-                   {-# LINE 240 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 247 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _self =
                   Nat i_
               _lhsOself =
                   _self
               _lhsOglobalBinds =
-                  ({-# LINE 33 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 44 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIglobalBinds
-                   {-# LINE 249 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 256 "src/lib/CCO/HM/AG.hs" #-}
                    )
           in  ( _lhsOexp,_lhsOglobalBinds,_lhsOoffset,_lhsOself)))
 sem_Tm__Var :: Var ->
@@ -260,23 +267,23 @@ sem_Tm__Var x_ =
               _lhsOself :: Tm_
               _lhsOglobalBinds :: (Map.Map Int CR.Exp)
               _lhsOexp =
-                  ({-# LINE 44 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 56 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    CR.SExp (CR.Var (varToRef _lhsIlevel _lhsIenv x_))
-                   {-# LINE 266 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 273 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _lhsOoffset =
-                  ({-# LINE 45 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 57 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIoffset + 1
-                   {-# LINE 271 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 278 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _self =
                   Var x_
               _lhsOself =
                   _self
               _lhsOglobalBinds =
-                  ({-# LINE 33 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 44 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIglobalBinds
-                   {-# LINE 280 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 287 "src/lib/CCO/HM/AG.hs" #-}
                    )
           in  ( _lhsOexp,_lhsOglobalBinds,_lhsOoffset,_lhsOself)))
 sem_Tm__Lam :: Var ->
@@ -300,48 +307,48 @@ sem_Tm__Lam x_ t1_ =
               _t1Ioffset :: Int
               _t1Iself :: Tm
               _lhsOexp =
-                  ({-# LINE 47 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   CR.Lam [_ref] _t1Iexp
-                   {-# LINE 306 "src/lib/CCO/HM/AG.hs" #-}
+                  ({-# LINE 59 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   CR.Lam [CR.Loc 0 0] _t1Iexp
+                   {-# LINE 313 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _lhsOoffset =
-                  ({-# LINE 48 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 60 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIoffset + 1
-                   {-# LINE 311 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 318 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _ref =
-                  ({-# LINE 49 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   CR.Loc (_lhsIlevel + 1) 0 :: CR.Ref
-                   {-# LINE 316 "src/lib/CCO/HM/AG.hs" #-}
+                  ({-# LINE 61 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   DeclLoc (_lhsIlevel + 1) 0
+                   {-# LINE 323 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t1Oenv =
-                  ({-# LINE 50 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 62 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    Map.insert x_ _ref _lhsIenv
-                   {-# LINE 321 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 328 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t1Olevel =
-                  ({-# LINE 51 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 63 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIlevel + 1
-                   {-# LINE 326 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 333 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t1Ooffset =
-                  ({-# LINE 52 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 64 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    1
-                   {-# LINE 331 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 338 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _self =
                   Lam x_ _t1Iself
               _lhsOself =
                   _self
               _lhsOglobalBinds =
-                  ({-# LINE 33 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 44 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _t1IglobalBinds
-                   {-# LINE 340 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 347 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t1OglobalBinds =
-                  ({-# LINE 34 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 45 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIglobalBinds
-                   {-# LINE 345 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 352 "src/lib/CCO/HM/AG.hs" #-}
                    )
               ( _t1Iexp,_t1IglobalBinds,_t1Ioffset,_t1Iself) =
                   t1_ _t1Oenv _t1OglobalBinds _t1Olevel _t1Ooffset
@@ -375,63 +382,63 @@ sem_Tm__App t1_ t2_ =
               _t2Ioffset :: Int
               _t2Iself :: Tm
               _lhsOexp =
-                  ({-# LINE 54 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 66 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    CR.App _t1Iexp [expToSExp _t2Iexp]
-                   {-# LINE 381 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 388 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t1Ooffset =
-                  ({-# LINE 55 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 67 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    1
-                   {-# LINE 386 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 393 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t2Ooffset =
-                  ({-# LINE 56 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 68 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIoffset
-                   {-# LINE 391 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 398 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _self =
                   App _t1Iself _t2Iself
               _lhsOself =
                   _self
               _lhsOglobalBinds =
-                  ({-# LINE 33 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 44 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _t2IglobalBinds
-                   {-# LINE 400 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 407 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _lhsOoffset =
-                  ({-# LINE 37 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 48 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _t2Ioffset
-                   {-# LINE 405 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 412 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t1Oenv =
-                  ({-# LINE 30 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 38 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIenv
-                   {-# LINE 410 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 417 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t1OglobalBinds =
-                  ({-# LINE 34 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 45 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIglobalBinds
-                   {-# LINE 415 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 422 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t1Olevel =
-                  ({-# LINE 31 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 41 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIlevel
-                   {-# LINE 420 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 427 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t2Oenv =
-                  ({-# LINE 30 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 38 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIenv
-                   {-# LINE 425 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 432 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t2OglobalBinds =
-                  ({-# LINE 34 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 45 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _t1IglobalBinds
-                   {-# LINE 430 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 437 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t2Olevel =
-                  ({-# LINE 31 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 41 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIlevel
-                   {-# LINE 435 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 442 "src/lib/CCO/HM/AG.hs" #-}
                    )
               ( _t1Iexp,_t1IglobalBinds,_t1Ioffset,_t1Iself) =
                   t1_ _t1Oenv _t1OglobalBinds _t1Olevel _t1Ooffset
@@ -448,15 +455,15 @@ sem_Tm__Let x_ t1_ t2_ =
        _lhsIlevel
        _lhsIoffset ->
          (let _lhsOexp :: (CR.Exp)
-              _lhsOoffset :: Int
+              _t1OglobalBinds :: (Map.Map Int CR.Exp)
               _t2OglobalBinds :: (Map.Map Int CR.Exp)
               _lhsOglobalBinds :: (Map.Map Int CR.Exp)
+              _t1Oenv :: Environment
+              _t2Oenv :: Environment
               _t1Ooffset :: Int
               _t2Ooffset :: Int
-              _t2Oenv :: Environment
+              _lhsOoffset :: Int
               _lhsOself :: Tm_
-              _t1Oenv :: Environment
-              _t1OglobalBinds :: (Map.Map Int CR.Exp)
               _t1Olevel :: Int
               _t2Olevel :: Int
               _t1Iexp :: (CR.Exp)
@@ -467,74 +474,95 @@ sem_Tm__Let x_ t1_ t2_ =
               _t2IglobalBinds :: (Map.Map Int CR.Exp)
               _t2Ioffset :: Int
               _t2Iself :: Tm
-              _lhsOexp =
-                  ({-# LINE 58 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   if _lhsIlevel == 0 then _t2Iexp else CR.Let (CR.Bind _ref _t1Iexp) _t2Iexp
-                   {-# LINE 474 "src/lib/CCO/HM/AG.hs" #-}
+              _isGlobal =
+                  ({-# LINE 70 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   _lhsIlevel == 0
+                   {-# LINE 481 "src/lib/CCO/HM/AG.hs" #-}
                    )
-              _lhsOoffset =
-                  ({-# LINE 59 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   _t2Ioffset
-                   {-# LINE 479 "src/lib/CCO/HM/AG.hs" #-}
+              _lhsOexp =
+                  ({-# LINE 71 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   if _isGlobal
+                       then _t2Iexp
+                       else CR.Let (CR.Bind (CR.Loc 0 _lhsIoffset) _t1Iexp) _t2Iexp
+                   {-# LINE 488 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _globalOffset =
-                  ({-# LINE 60 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 78 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    Map.size _lhsIglobalBinds
-                   {-# LINE 484 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 493 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _ref =
-                  ({-# LINE 61 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   if _lhsIlevel == 0 then CR.Glob _globalOffset else CR.Loc _lhsIlevel _lhsIoffset :: CR.Ref
-                   {-# LINE 489 "src/lib/CCO/HM/AG.hs" #-}
+                  ({-# LINE 80 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   if _isGlobal
+                     then DeclGlob _globalOffset
+                     else DeclLoc _lhsIlevel _lhsIoffset
+                   {-# LINE 500 "src/lib/CCO/HM/AG.hs" #-}
+                   )
+              _newGlobalBinds =
+                  ({-# LINE 85 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   if _isGlobal
+                     then Map.insert _globalOffset _t1Iexp _lhsIglobalBinds
+                     else _lhsIglobalBinds
+                   {-# LINE 507 "src/lib/CCO/HM/AG.hs" #-}
+                   )
+              _t1OglobalBinds =
+                  ({-# LINE 89 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   _newGlobalBinds
+                   {-# LINE 512 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t2OglobalBinds =
-                  ({-# LINE 62 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   if _lhsIlevel == 0 then Map.insert _globalOffset _t1Iexp _lhsIglobalBinds else _lhsIglobalBinds
-                   {-# LINE 494 "src/lib/CCO/HM/AG.hs" #-}
+                  ({-# LINE 90 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   _t1IglobalBinds
+                   {-# LINE 517 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _lhsOglobalBinds =
-                  ({-# LINE 63 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 91 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _t2IglobalBinds
-                   {-# LINE 499 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 522 "src/lib/CCO/HM/AG.hs" #-}
                    )
-              _t1Ooffset =
-                  ({-# LINE 64 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   _lhsIoffset
-                   {-# LINE 504 "src/lib/CCO/HM/AG.hs" #-}
+              _newEnv =
+                  ({-# LINE 93 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   Map.insert x_ _ref _lhsIenv
+                   {-# LINE 527 "src/lib/CCO/HM/AG.hs" #-}
                    )
-              _t2Ooffset =
-                  ({-# LINE 65 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   _t1Ioffset
-                   {-# LINE 509 "src/lib/CCO/HM/AG.hs" #-}
+              _t1Oenv =
+                  ({-# LINE 94 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   _newEnv
+                   {-# LINE 532 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t2Oenv =
-                  ({-# LINE 66 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   Map.insert x_ _ref _lhsIenv
-                   {-# LINE 514 "src/lib/CCO/HM/AG.hs" #-}
+                  ({-# LINE 95 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   _newEnv
+                   {-# LINE 537 "src/lib/CCO/HM/AG.hs" #-}
+                   )
+              _t1Ooffset =
+                  ({-# LINE 97 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   _lhsIoffset
+                   {-# LINE 542 "src/lib/CCO/HM/AG.hs" #-}
+                   )
+              _t2Ooffset =
+                  ({-# LINE 98 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   _t1Ioffset
+                   {-# LINE 547 "src/lib/CCO/HM/AG.hs" #-}
+                   )
+              _lhsOoffset =
+                  ({-# LINE 99 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                   _t2Ioffset
+                   {-# LINE 552 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _self =
                   Let x_ _t1Iself _t2Iself
               _lhsOself =
                   _self
-              _t1Oenv =
-                  ({-# LINE 30 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   _lhsIenv
-                   {-# LINE 523 "src/lib/CCO/HM/AG.hs" #-}
-                   )
-              _t1OglobalBinds =
-                  ({-# LINE 34 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
-                   _lhsIglobalBinds
-                   {-# LINE 528 "src/lib/CCO/HM/AG.hs" #-}
-                   )
               _t1Olevel =
-                  ({-# LINE 31 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 41 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIlevel
-                   {-# LINE 533 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 561 "src/lib/CCO/HM/AG.hs" #-}
                    )
               _t2Olevel =
-                  ({-# LINE 31 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
+                  ({-# LINE 41 "src/lib/CCO/HM/AG/HMToCR.ag" #-}
                    _lhsIlevel
-                   {-# LINE 538 "src/lib/CCO/HM/AG.hs" #-}
+                   {-# LINE 566 "src/lib/CCO/HM/AG.hs" #-}
                    )
               ( _t1Iexp,_t1IglobalBinds,_t1Ioffset,_t1Iself) =
                   t1_ _t1Oenv _t1OglobalBinds _t1Olevel _t1Ooffset
