@@ -75,12 +75,15 @@ sem Tm_
         t2.offset = @lhs.offset
        
   | Let loc.isGlobal = @lhs.level == 0 -- are we in global scope? TODO: Better way of determining this
+        loc.thunk  = case @t1.exp of
+                      CR.Lam _ _ -> @t1.exp
+                      _ -> CR.Lam [] @t1.exp
         lhs.exp    =
           if @loc.isGlobal
               -- binding is lifted to global scope
               then @t2.exp
               -- local binding on the stack (in current level)
-              else CR.Let (CR.Bind (CR.Loc 0 @lhs.offset) @t1.exp) @t2.exp
+              else CR.Let (CR.Bind (CR.Loc 0 @lhs.offset) @thunk) @t2.exp
         -- next free slot for a global binding
         loc.globalOffset = Map.size @lhs.globalBinds
         -- create ref depending on where expression is bound
@@ -91,7 +94,7 @@ sem Tm_
         -- possibly update global bindings
         loc.newGlobalBinds =
           if @loc.isGlobal
-            then Map.insert @globalOffset @t1.exp @lhs.globalBinds
+            then Map.insert @globalOffset @thunk @lhs.globalBinds
             else @lhs.globalBinds
         t1.globalBinds  = @loc.newGlobalBinds
         t2.globalBinds  = @t1.globalBinds
@@ -105,7 +108,7 @@ sem Tm_
         t2.offset  = @lhs.offset + 1
         --lhs.offset = @t2.offset
         
-   | If lhs.exp    = CR.Case (expToSExp @cond.exp) [@t1.exp, @t2.exp]
+   | If lhs.exp    = CR.Case (expToSExp @cond.exp) [@t2.exp, @t1.exp]
         --lhs.offset = @lhs.offset + 1
         t1.level   = @lhs.level + 1
         t1.offset  = @lhs.offset 

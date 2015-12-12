@@ -57,28 +57,18 @@ sem Tm_
         lhs.bindings = @t1.bindings ++ [(@x, @lhs.pos, @t1.noLetTm)] ++ @t2.bindings
   | If  loc.unique :: uniqueref counter
         loc.anfref   = toSpecialName @unique
-        loc.isAnfCond = isANF @cond.noLetTm
+        --loc.isAnfCond = isANF @cond.noLetTm
         loc.thenTm    = (introduceLets @t1.noLetTm @t1.bindings)
         loc.elseTm    = (introduceLets @t2.noLetTm @t2.bindings)
-        lhs.noLetTm  = Tm @lhs.pos $ if @isAnfCond 
-                        then If @cond.noLetTm @thenTm @elseTm
-                        else If (Tm @cond.pos (Var @anfref)) @thenTm @elseTm
-        loc.optNewBinding = if @loc.isAnfCond
-                              then [] 
-                              else [(@loc.anfref, @lhs.pos, @cond.noLetTm)]
-        lhs.bindings = @cond.bindings ++ @optNewBinding
-  | Var Nat Prim lhs.noLetTm = Tm @lhs.pos @self
+        lhs.noLetTm  = Tm @lhs.pos $ If (Tm @cond.pos (Var @anfref)) @thenTm @elseTm
+        lhs.bindings = @cond.bindings ++ [(@loc.anfref, @lhs.pos, @cond.noLetTm)]
+  | Var Nat Prim lhs.noLetTm  = Tm @lhs.pos @self
                  lhs.bindings = []
   | App loc.unique :: uniqueref counter
         loc.anfref   = toSpecialName @unique
-        loc.isAnfArg = isANF @t2.noLetTm
-        lhs.noLetTm  = Tm @lhs.pos $ if @loc.isAnfArg 
-                        then App @t1.noLetTm @t2.noLetTm 
-                        else App @t1.noLetTm (Tm @t2.pos (Var @anfref))
-        loc.optNewBinding = if @loc.isAnfArg 
-                              then [] 
-                              else [(@loc.anfref, @lhs.pos, @t2.noLetTm)]
-        lhs.bindings = @t1.bindings ++ @t2.bindings ++ @loc.optNewBinding
+        --loc.isAnfArg = isANF @t2.noLetTm
+        lhs.noLetTm  = Tm @lhs.pos $ App @t1.noLetTm (Tm @t2.pos (Var @anfref))
+        lhs.bindings = @t1.bindings ++ @t2.bindings ++ [(@loc.anfref, @lhs.pos, @t2.noLetTm)]
         
 {-sem Tm_
   | Var Nat lhs.anf = @self
