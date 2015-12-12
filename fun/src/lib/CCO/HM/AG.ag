@@ -16,3 +16,5 @@ module {CCO.HM.AG} {} {}
 
 include "AG/Base.ag"
 include "AG/HMToCR.ag"
+include "AG/Pos.ag"
+include "AG/ToANF.ag"

@@ -24,6 +24,7 @@ module CCO.HM.Lexer (
   , var        -- :: Parser Token String
   , nat        -- :: Parser Token String
   , spec       -- :: Char -> Parser Token Char
+  , strLit     -- :: Parser Token String
 ) where
 
 import CCO.HM.Base    (Var)
@@ -41,12 +42,14 @@ data Token
   | Var      { fromVar     :: Var    }    -- ^ Variable.
   | Nat      { fromNat     :: Int    }    -- ^ Nat/Int.
   | Spec     { fromSpec    :: Char   }    -- ^ Special character.
+  | StrLit   { fromStrLit  :: String }    -- ^ String (as used in prim)
 
 instance Symbol Token where
   describe (Keyword _)  lexeme = "keyword "  ++ lexeme
   describe (Nat _)      lexeme = "integer "  ++ lexeme
   describe (Var _)      lexeme = "variable " ++ lexeme
   describe (Spec _)     lexeme =                lexeme
+  describe (StrLit _)   lexeme = "string"    ++ lexeme
 
 -- | Retrieves whether a 'Token' is a 'Keyword'.
 isKeyword :: Token -> Bool
@@ -68,6 +71,10 @@ isSpec :: Token -> Bool
 isSpec (Spec _) = True
 isSpec _        = False
 
+isStrLit :: Token -> Bool
+isStrLit (StrLit _) = True
+isStrLit _        = False
+
 -------------------------------------------------------------------------------
 -- Lexer
 -------------------------------------------------------------------------------
@@ -78,7 +85,8 @@ layout_ = ignore (some (anyCharFrom " \n\t"))
 
 -- | A 'Lexer' that recognises 'Keyword' tokens.
 keyword_ :: Lexer Token
-keyword_ = fmap Keyword $ string "in" <|> string "let" <|> string "ni"
+keyword_ = fmap Keyword $ string "in" <|> string "let" <|> string "ni" <|> string "prim" 
+  <|> string "if" <|> string "then" <|> string "else" <|> string "fi"
 
 -- | A 'Lexer' that recognises 'Var' tokens.
 var_ :: Lexer Token
@@ -92,9 +100,19 @@ nat_ = (Nat . read) <$> some digit
 spec_ :: Lexer Token
 spec_ = Spec <$> anyCharFrom "()=\\."
 
+strlit_ :: Lexer Token
+strlit_ = StrLit <$ char '"' <*> go where
+  go = "" <$ char '"'
+    <|> (:) <$> (escape <$ char '\\' <*> anyChar) <*> go
+    <|> (:) <$> anyChar <*> go
+
+  escape '\\' = '\\'
+  escape '"' = '"'
+  escape _ = error "invalid escape sequence"
+
 -- | The 'Lexer' for the language.
 lexer :: Lexer Token
-lexer = layout_ <|> keyword_ <|> var_ <|> nat_ <|> spec_
+lexer = layout_ <|> keyword_ <|> var_ <|> nat_ <|> spec_ <|> strlit_
 
 -------------------------------------------------------------------------------
 -- Token parsers
@@ -119,3 +137,6 @@ spec :: Char -> Parser Token Char
 spec c = fromSpec <$>
          satisfy (\tok -> isSpec tok && fromSpec tok == c) <!>
          [c]
+
+strLit :: Parser Token String
+strLit = fromStrLit <$> satisfy isStrLit

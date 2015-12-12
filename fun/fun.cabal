@@ -48,6 +48,11 @@ executable hm-to-cr
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
   hs-source-dirs:      src/hm-to-cr
 
+executable hm-to-anf
+  main-is:             HMToANF.hs
+  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
+  hs-source-dirs:      src/hm-to-anf
+
 executable parse-hm
   main-is:             ParseHM.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun

@@ -10,6 +10,9 @@ import Debug.Trace
 }
 
 {
+-- | An absolute reference to a variable declaration. In contrast to 'CR.Ref',
+-- @DeclLoc@ takes the absolute lexical level counted from the root instead of
+-- an relative level counted from the current one.
 data DeclRef
   = DeclLoc { declLocLevel :: Int, declLocOffset :: Int}
   | DeclGlob { declGlobOffset :: Int }
@@ -45,28 +48,32 @@ attr Tm Tm_
   inh globalBinds          :: {Map.Map Int CR.Exp}
   -- local stack offset
   inh offset               :: {Int}
-  syn offset               :: {Int}
+  --syn offset               :: {Int}
   -- the generated expression
   syn exp                  :: {CR.Exp}
 
 sem Tm_
   | Nat lhs.exp    = CR.SExp (CR.Int @i)
-        lhs.offset = @lhs.offset + 1
+        --lhs.offset = @lhs.offset + 1
 
-  | Var lhs.exp    = CR.SExp (CR.Var (varToRef @lhs.level @lhs.env @x))
-        lhs.offset = @lhs.offset + 1
+  | Var lhs.exp    = CR.SExp (CR.Var (varToRef @lhs.pos @lhs.level @lhs.env @x))
+        --lhs.offset = @lhs.offset + 1
 
   | Lam lhs.exp    = CR.Lam [CR.Loc 0 0] @t1.exp
-        lhs.offset = @lhs.offset + 1
+        --lhs.offset = @lhs.offset + 1
         loc.ref    = DeclLoc (@lhs.level + 1) 0
         t1.env     = Map.insert @x @ref @lhs.env
         t1.level   = @lhs.level + 1
         t1.offset  = 1 -- always takes one argument
+        
+  | Prim lhs.exp = CR.Prim @fn []
 
-  | App lhs.exp   = CR.App @t1.exp [expToSExp @t2.exp]
-        t1.offset = 1 -- always takes one argument
+  | App lhs.exp   = case @t1.exp of
+                      CR.Prim fn args -> CR.Prim fn (args ++ [expToSExp @t2.exp])
+                      other           -> CR.App other [expToSExp @t2.exp]
+        t1.offset = @lhs.offset -- always takes one argument
         t2.offset = @lhs.offset
-
+       
   | Let loc.isGlobal = @lhs.level == 0 -- are we in global scope? TODO: Better way of determining this
         lhs.exp    =
           if @loc.isGlobal
@@ -95,8 +102,14 @@ sem Tm_
         t2.env     = @loc.newEnv
         -- thread offset through computation
         t1.offset  = @lhs.offset
-        t2.offset  = @t1.offset
-        lhs.offset = @t2.offset
+        t2.offset  = @lhs.offset + 1
+        --lhs.offset = @t2.offset
+        
+   | If lhs.exp    = CR.Case (expToSExp @cond.exp) [@t1.exp, @t2.exp]
+        --lhs.offset = @lhs.offset + 1
+        t1.level   = @lhs.level + 1
+        t1.offset  = @lhs.offset 
+        t2.offset  = @lhs.offset
 
 
 {
@@ -104,8 +117,9 @@ expToSExp :: CR.Exp -> CR.SExp
 expToSExp (CR.SExp se) = se
 expToSExp _            = error "Exp not a SExp"
 
-varToRef :: Int -> Environment -> Var -> CR.Ref
-varToRef currentLevel env x = case env Map.! x of
-    DeclLoc bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
-    DeclGlob offset -> CR.Glob offset
+varToRef :: SourcePos -> Int -> Environment -> Var -> CR.Ref
+varToRef pos currentLevel env x = case Map.lookup x env of
+    Just (DeclLoc bindLevel offset) -> CR.Loc (currentLevel - bindLevel) offset
+    Just (DeclGlob offset) -> CR.Glob offset
+    Nothing -> error $ "Variable " ++ x ++ " not found (" ++ describeSourcePos pos ++ ")"
 }

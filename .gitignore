@@ -20,6 +20,6 @@ cabal.sandbox.config
 *.log
 *.synctex.gz
 
-fun/src/CCO/Core/AG.hs
-fun/src/CCO/HM/AG.hs
-fun/src/CCO/SystemF/AG.hs
+fun/src/lib/CCO/Core/AG.hs
+fun/src/lib/CCO/HM/AG.hs
+fun/src/lib/CCO/SystemF/AG.hs

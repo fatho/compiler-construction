@@ -3,7 +3,7 @@ CABAL-BUILD-FLAGS     :=
 
 all : haskell
 
-src/lib/CCO/HM/AG.hs : src/lib/CCO/HM/AG.ag src/lib/CCO/HM/AG/Base.ag src/lib/CCO/HM/AG/HMToCR.ag
+src/lib/CCO/HM/AG.hs : src/lib/CCO/HM/AG.ag src/lib/CCO/HM/AG/Base.ag src/lib/CCO/HM/AG/HMToCR.ag src/lib/CCO/HM/AG/ToANF.ag
 	uuagc -Hdcfws --self -P src/lib/CCO/HM src/lib/CCO/HM/AG.ag
 
 src/lib/CCO/SystemF/AG.hs : src/lib/CCO/SystemF/AG.ag src/lib/CCO/SystemF/AG/Base.ag \

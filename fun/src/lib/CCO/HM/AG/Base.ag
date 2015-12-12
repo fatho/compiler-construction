@@ -20,3 +20,5 @@ data Tm_
   | Lam  x :: {Var}  t1 :: Tm
   | App  t1 :: Tm  t2 :: Tm
   | Let  x :: {Var}  t1 :: Tm  t2 :: Tm
+  | Prim fn :: String -- args :: {[Tm]}
+  | If cond :: Tm t1 :: Tm t2 :: Tm -- if cond then t1 else t2

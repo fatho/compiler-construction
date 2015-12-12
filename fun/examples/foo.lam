@@ -1,15 +1,5 @@
+let plus = \x . \y . prim "primAddInt" x y in
 let fv = 5 in
-let const = \x . \y . x in
-let bar = \x . const 5 bar in
-let foo = \x . let one = 1 in
-               let two = 2 in
-               let baz = \z . let a = const x one in
-                              let b = const z two in
-                                const a b
-                              ni ni
-                        in
-                baz 4
-               ni ni ni
-          in
-  foo 3
-ni ni ni ni
+let id = \x.x
+in id (plus (id fv) 4)
+ni ni ni
