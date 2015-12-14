@@ -39,8 +39,8 @@ instance Tree Tm_ where
   fromTree (Lam x t1)    = T.App "Lam" [fromTree x, fromTree t1]
   fromTree (App t1 t2)   = T.App "App" [fromTree t1, fromTree t2]
   fromTree (Let x t1 t2) = T.App "Let" [fromTree x, fromTree t1, fromTree t2]
-  --fromTree (Prim fn as)  = T.App "Prim" [fromTree fn, fromTree as]
-  fromTree (Prim fn)     = T.App "Prim" [fromTree fn]
+  fromTree (Prim fn as)  = T.App "Prim" [fromTree fn, fromTree as]
+  --fromTree (Prim fn)     = T.App "Prim" [fromTree fn]
   fromTree (If c t1 t2)  = T.App "If" [fromTree c, fromTree t1, fromTree t2]
 
   toTree = parseTree [ app "Nat" (Nat <$> arg                )
@@ -48,7 +48,7 @@ instance Tree Tm_ where
                      , app "Lam" (Lam <$> arg <*> arg        )
                      , app "App" (App <$> arg <*> arg        )
                      , app "Let" (Let <$> arg <*> arg <*> arg)
-                     --, app "Prim" (Prim <$> arg <*> arg      )
-                     , app "Prim" (Prim <$> arg              )
+                     , app "Prim" (Prim <$> arg <*> arg      )
+                     --, app "Prim" (Prim <$> arg              )
                      , app "If" (If <$> arg <*> arg <*> arg)
                      ]

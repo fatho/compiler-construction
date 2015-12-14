@@ -14,11 +14,24 @@ type Var = String    -- ^ Type of variables.
 data Tm
   | Tm  pos :: {SourcePos}  t :: Tm_
 
+type TmL = [Tm]
+
 data Tm_
   | Nat  i :: {Int}
   | Var  x :: {Var}
   | Lam  x :: {Var}  t1 :: Tm
   | App  t1 :: Tm  t2 :: Tm
   | Let  x :: {Var}  t1 :: Tm  t2 :: Tm
-  | Prim fn :: String -- args :: {[Tm]}
+  | Prim fn :: String args :: TmL
   | If cond :: Tm t1 :: Tm t2 :: Tm -- if cond then t1 else t2
+
+deriving Tm Tm_ : Show
+
+
+{
+
+isVar :: Tm -> Bool
+isVar (Tm _ (Var _)) = True
+isVar _              = False
+
+}

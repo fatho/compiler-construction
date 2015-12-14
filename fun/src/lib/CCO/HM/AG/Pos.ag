@@ -9,7 +9,7 @@ attr Tm
 sem Tm
   | Tm lhs.pos = @pos
 
-attr Tm_
+attr Tm_ TmL
   inh pos :: {SourcePos}
 
 sem Tm

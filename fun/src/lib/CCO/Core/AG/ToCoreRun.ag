@@ -35,7 +35,8 @@ sem Exp
   | Case loc    .   crexp   =   CR.mkCase (head @sexp.crsexpl) @alts.crexpl
   | Let  loc    .   crexp   =   CR.mkLet @lhs.stkoff @bind.crbindl @body.crexp
   | Dbg  loc    .   crexp   =   CR.mkDbg @info
-  | Eval loc    .   crexp   =   CR.mkEval @thunk
+  | Eval loc    .   crexp   =   CR.mkEval @thunk.crexp
+  
 
 sem Exp
   | * 	 lhs	.	crexpl	=	[@crexp]

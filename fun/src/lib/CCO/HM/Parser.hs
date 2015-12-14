@@ -41,8 +41,8 @@ parser = C.parser lexer (pTm <* eof)
 
 -- | Parses a 'Tm'.
 pTm :: TokenParser Tm
--- pTm = pLam <|> pPrim <|> pApp
-pTm = pLam <|> pApp
+pTm = pLam <|> pPrim <|> pApp
+-- pTm = pLam <|> pApp
 
 
 pLam :: TokenParser Tm
@@ -57,7 +57,7 @@ pApp :: TokenParser Tm
 pApp = (\pos ts -> foldl1 (\t1 t2 -> Tm pos (App t1 t2)) ts) 
         <$> sourcePos 
         <*> some
-          (  pPrim <|>
+          (  -- pPrim <|>
              pLet <|>
              pIf  <|>
              pNat <|>
@@ -65,12 +65,13 @@ pApp = (\pos ts -> foldl1 (\t1 t2 -> Tm pos (App t1 t2)) ts)
              pPar
           )
 
+{-
 pPrim :: TokenParser Tm
 pPrim = (\pos fn -> Tm pos (Prim fn))
   <$> sourcePos
   <*  keyword "prim"
   <*> strLit
-{-
+-}
 pPrim :: TokenParser Tm
 pPrim = (\pos fn args -> Tm pos (Prim fn args))
   <$> sourcePos
@@ -81,7 +82,6 @@ pPrim = (\pos fn args -> Tm pos (Prim fn args))
          pVar <|>
          pPar
       )
--}
 pNat :: TokenParser Tm
 pNat = (\pos x -> Tm pos (Nat x)) <$> sourcePos <*> nat
 

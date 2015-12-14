@@ -29,14 +29,19 @@ attr HMToCR
 
 sem HMToCR
   | HMToCR loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList @root.globalBinds
-           lhs.mod           = CR.Mod @root.exp @loc.modBinds
+           lhs.mod      = CR.Mod @root.exp @loc.modBinds
            -- pass inherited attributes
            root.level        = 0
-           root.globalBinds  = Map.empty
+           root.globalScope  = True
+           root.globalOffset = 0
            root.env          = Map.empty
            root.offset       = 0
+           root.forceEval    = True
 
 attr Tm Tm_
+  syn exp                  :: {CR.Exp}
+
+attr Tm Tm_ TmL
   -- a mapping of all variables in scope
   inh env                  :: {Environment}
   -- the absolute lexical level (counted from the top, first level is 0)
@@ -44,40 +49,58 @@ attr Tm Tm_
   inh level                :: {Int}
   -- let bindings at the root of the AST are translated to global bindings
   -- and handled by HMToCR
-  syn globalBinds          :: {Map.Map Int CR.Exp}
-  inh globalBinds          :: {Map.Map Int CR.Exp}
+  inh globalScope          :: Bool
+  inh globalOffset         :: Int
+  syn globalBinds use {`Map.union`} {Map.empty} :: {Map.Map Int CR.Exp}
   -- local stack offset
   inh offset               :: {Int}
+  inh forceEval            :: {Bool}
   --syn offset               :: {Int}
   -- the generated expression
-  syn exp                  :: {CR.Exp}
+
+attr TmL
+  syn expL use {++} {[]}   :: {[CR.Exp]}
+
+sem TmL
+  | Cons lhs.expL = @hd.exp : @tl.expL
 
 sem Tm_
   | Nat lhs.exp    = CR.SExp (CR.Int @i)
         --lhs.offset = @lhs.offset + 1
 
-  | Var lhs.exp    = CR.SExp (CR.Var (varToRef @lhs.pos @lhs.level @lhs.env @x))
+  | Var lhs.exp    = optForceEval @lhs.forceEval $ CR.SExp (CR.Var (varToRef @lhs.pos @lhs.level @lhs.env @x))
         --lhs.offset = @lhs.offset + 1
 
-  | Lam lhs.exp    = CR.Lam [CR.Loc 0 0] @t1.exp
-        --lhs.offset = @lhs.offset + 1
+  | Lam lhs.exp    = CR.Lam [CR.Loc 0 0] $ mkThunk @t1.exp
         loc.ref    = DeclLoc (@lhs.level + 1) 0
         t1.env     = Map.insert @x @ref @lhs.env
-        t1.level   = @lhs.level + 1
-        t1.offset  = 1 -- always takes one argument
+        t1.level   = @lhs.level + 2
+        t1.offset  = 0
+        t1.globalScope = False
+        t1.forceEval = True
         
-  | Prim lhs.exp = CR.Prim @fn []
+  | Prim  loc.arity = length @args.expL
+          loc.slots = [@lhs.offset .. @lhs.offset + @arity - 1]
+          loc.argSlots = zip @slots @args.expL
+          loc.argRefs  = map (CR.Var . CR.Loc 0) @slots
+          args.forceEval = True
+          lhs.exp = foldr (\(sl,arg) -> CR.Let (CR.Bind (CR.Loc 0 sl) arg)) (CR.Prim @fn @argRefs) @argSlots
 
-  | App lhs.exp   = case @t1.exp of
-                      CR.Prim fn args -> CR.Prim fn (args ++ [expToSExp @t2.exp])
-                      other           -> CR.App other [expToSExp @t2.exp]
-        t1.offset = @lhs.offset -- always takes one argument
-        t2.offset = @lhs.offset
+-- CR.Let (CR.Bind (CR.Loc 0 @lhs.offset) @t1.exp) $ 
+-- (CR.SExp $ CR.Var $ CR.Loc 0 @lhs.offset)
+  | App lhs.exp   = optForceEval @lhs.forceEval $ CR.App @t1.exp [expToSExp @t2.exp]
+        t1.offset = notRequired $ @lhs.offset -- always takes one argument
+        t2.offset = notRequired $ @lhs.offset
+        t1.forceEval = True
+        t2.forceEval = False
        
-  | Let loc.isGlobal = @lhs.level == 0 -- are we in global scope? TODO: Better way of determining this
-        loc.thunk  = case @t1.exp of
-                      CR.Lam _ _ -> @t1.exp
-                      _ -> CR.Lam [] @t1.exp
+  | Let loc.isGlobal = @lhs.globalScope -- are we in global scope? TODO: Better way of determining this
+        -- make a thunk
+        loc.thunk  = mkThunk @t1.exp
+        t1.forceEval = True
+        t1.level   = @lhs.level + 1
+        t1.offset  = 0
+        -- create binding
         lhs.exp    =
           if @loc.isGlobal
               -- binding is lifted to global scope
@@ -85,35 +108,41 @@ sem Tm_
               -- local binding on the stack (in current level)
               else CR.Let (CR.Bind (CR.Loc 0 @lhs.offset) @thunk) @t2.exp
         -- next free slot for a global binding
-        loc.globalOffset = Map.size @lhs.globalBinds
+        t2.globalOffset = if @loc.isGlobal 
+                            then @lhs.globalOffset + 1 
+                            else @lhs.globalOffset
         -- create ref depending on where expression is bound
         loc.ref    =
           if @loc.isGlobal
-            then DeclGlob @globalOffset
+            then DeclGlob @lhs.globalOffset
             else DeclLoc @lhs.level @lhs.offset
         -- possibly update global bindings
-        loc.newGlobalBinds =
+        lhs.globalBinds =
           if @loc.isGlobal
-            then Map.insert @globalOffset @thunk @lhs.globalBinds
-            else @lhs.globalBinds
-        t1.globalBinds  = @loc.newGlobalBinds
-        t2.globalBinds  = @t1.globalBinds
-        lhs.globalBinds = @t2.globalBinds
+            then Map.insert @lhs.globalOffset @thunk @t2.globalBinds
+            else @t2.globalBinds
         -- provide binding to body and the bound expression (to allow recursion)
         loc.newEnv = Map.insert @x @ref @lhs.env
         t1.env     = @loc.newEnv
         t2.env     = @loc.newEnv
         -- thread offset through computation
-        t1.offset  = @lhs.offset
-        t2.offset  = @lhs.offset + 1
+        t2.offset  = if @loc.isGlobal 
+                            then @lhs.offset
+                            else @lhs.offset + 1
         --lhs.offset = @t2.offset
+        t1.globalScope = False
         
-   | If lhs.exp    = CR.Case (expToSExp @cond.exp) [@t2.exp, @t1.exp]
+   | If loc.thunkValRef = CR.Loc 0 @lhs.offset
+        lhs.exp    = CR.Let (CR.Bind @thunkValRef (CR.Eval @cond.exp)) $
+                        CR.Case (CR.Var @thunkValRef) [@t2.exp, @t1.exp]
         --lhs.offset = @lhs.offset + 1
-        t1.level   = @lhs.level + 1
-        t1.offset  = @lhs.offset 
-        t2.offset  = @lhs.offset
-
+        cond.forceEval = False
+        --t1.level   = @lhs.level + 1
+        t1.offset  = notRequired $ @lhs.offset + 1
+        t2.offset  = notRequired $ @lhs.offset + 1
+        t1.globalScope   = False
+        t2.globalScope   = False
+        cond.globalScope = False
 
 {
 expToSExp :: CR.Exp -> CR.SExp
@@ -125,4 +154,14 @@ varToRef pos currentLevel env x = case Map.lookup x env of
     Just (DeclLoc bindLevel offset) -> CR.Loc (currentLevel - bindLevel) offset
     Just (DeclGlob offset) -> CR.Glob offset
     Nothing -> error $ "Variable " ++ x ++ " not found (" ++ describeSourcePos pos ++ ")"
+
+mkThunk :: CR.Exp -> CR.Exp
+mkThunk = CR.Lam []
+
+optForceEval :: Bool -> CR.Exp -> CR.Exp
+optForceEval True x = CR.Eval x
+optForceEval False x = x
+
+notRequired :: a -> b
+notRequired _ = error "has the program been passed to 'hm-to-anf'?"
 }

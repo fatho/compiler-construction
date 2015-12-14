@@ -27,7 +27,13 @@ toSpecialName i = "$" ++ show i
 introduceLets :: Tm -> Bindings -> Tm
 introduceLets = foldr (\(x, pos, tm) body -> Tm pos (Let x tm body))
 
+varOrBind :: Int -> SourcePos -> Tm -> (Tm,Bindings)
+varOrBind varId _ t@(Tm _ (Var _)) = (t, [])
+varOrBind varId bindPos t@(Tm pos t') = (Tm pos (Var name), [(name, bindPos, t)] ) where
+  name = toSpecialName varId
+
 type Bindings = [(String, SourcePos, Tm)]
+
 }
 
 data ToANF
@@ -36,12 +42,15 @@ data ToANF
 attr ToANF
   syn anf :: Tm
 
-attr Tm Tm_ 
+attr Tm Tm_ TmL
   -- syn anf         :: Tm_
   chn counter     :: Int 
   -- chn aenv        :: AppEnv
   
   syn bindings    :: {Bindings}
+
+attr TmL
+  syn noLetTmL    :: TmL
 
 attr Tm Tm_
   syn noLetTm     :: Tm
@@ -50,25 +59,41 @@ sem ToANF
   | ToANF lhs.anf   = introduceLets @t.noLetTm @t.bindings
           t.counter = 0
 
+sem TmL
+  | Cons  loc.unique :: uniqueref counter
+          loc.anfBind  = varOrBind @unique @lhs.pos (introduceLets @hd.noLetTm @hd.bindings)
+          lhs.bindings = snd @anfBind ++ @tl.bindings
+          lhs.noLetTmL = fst @anfBind : @tl.noLetTmL
+  | Nil   lhs.bindings = []
+          lhs.noLetTmL = []
+
 sem Tm_
-  | Lam lhs.noLetTm  = Tm @lhs.pos $Lam @x (introduceLets @t1.noLetTm @t1.bindings)
+  | Lam lhs.noLetTm  = Tm @lhs.pos $ Lam @x (introduceLets @t1.noLetTm @t1.bindings)
         lhs.bindings = []
   | Let lhs.noLetTm  = @t2.noLetTm
-        lhs.bindings = @t1.bindings ++ [(@x, @lhs.pos, @t1.noLetTm)] ++ @t2.bindings
-  | If  loc.unique :: uniqueref counter
-        loc.anfref   = toSpecialName @unique
-        --loc.isAnfCond = isANF @cond.noLetTm
-        loc.thenTm    = (introduceLets @t1.noLetTm @t1.bindings)
-        loc.elseTm    = (introduceLets @t2.noLetTm @t2.bindings)
-        lhs.noLetTm  = Tm @lhs.pos $ If (Tm @cond.pos (Var @anfref)) @thenTm @elseTm
-        lhs.bindings = @cond.bindings ++ [(@loc.anfref, @lhs.pos, @cond.noLetTm)]
-  | Var Nat Prim lhs.noLetTm  = Tm @lhs.pos @self
-                 lhs.bindings = []
-  | App loc.unique :: uniqueref counter
-        loc.anfref   = toSpecialName @unique
-        --loc.isAnfArg = isANF @t2.noLetTm
-        lhs.noLetTm  = Tm @lhs.pos $ App @t1.noLetTm (Tm @t2.pos (Var @anfref))
-        lhs.bindings = @t1.bindings ++ @t2.bindings ++ [(@loc.anfref, @lhs.pos, @t2.noLetTm)]
+        lhs.bindings = [(@x, @lhs.pos, introduceLets @t1.noLetTm @t1.bindings)] ++ @t2.bindings
+  | If  loc.uniqueCond :: uniqueref counter
+        loc.uniqueThen :: uniqueref counter
+        loc.uniqueElse :: uniqueref counter
+
+        loc.anfBindCond = varOrBind @uniqueCond @lhs.pos (introduceLets @cond.noLetTm @cond.bindings)
+        loc.anfBindThen = varOrBind @uniqueThen @lhs.pos (introduceLets @t1.noLetTm @t1.bindings)
+        loc.anfBindElse = varOrBind @uniqueElse @lhs.pos (introduceLets @t2.noLetTm @t2.bindings)
+
+        lhs.noLetTm  = Tm @lhs.pos $ If (fst @anfBindCond) (fst @anfBindThen) (fst @anfBindElse)
+        lhs.bindings = snd @anfBindCond ++ snd @anfBindThen ++ snd @anfBindElse
+  | Prim  loc.unique :: uniqueref counter
+          loc.anfRef   = toSpecialName @unique
+          lhs.noLetTm  = Tm @lhs.pos $ Var @anfRef
+          lhs.bindings = @args.bindings ++ [(@anfRef, @lhs.pos, Tm @lhs.pos $ Prim @fn @args.noLetTmL)]
+  | Var Nat lhs.noLetTm = Tm @lhs.pos @self
+            lhs.bindings = []
+  | App loc.uniqueFun :: uniqueref counter
+        loc.uniqueArg :: uniqueref counter
+        loc.anfBindFun = varOrBind @uniqueFun @lhs.pos (introduceLets @t1.noLetTm @t1.bindings)
+        loc.anfBindArg = varOrBind @uniqueArg @lhs.pos (introduceLets @t2.noLetTm @t2.bindings)
+        lhs.noLetTm  = Tm @lhs.pos $ App (fst @anfBindFun) (fst @anfBindArg)
+        lhs.bindings = snd @anfBindFun ++ snd @anfBindArg
         
 {-sem Tm_
   | Var Nat lhs.anf = @self
