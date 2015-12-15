@@ -1,3 +1,6 @@
 let eq = \x. \y. prim "primEqInt" x y in
-eq 0 0
-ni
+let add = \x. \y. prim "primAddInt" x y in
+let sub = \x. \y. prim "primSubInt" x y in
+let mul = \x. \y. if eq x 0 then 0 else add y (mul (sub x 1) y) fi in
+mul 10 10
+ni ni ni ni

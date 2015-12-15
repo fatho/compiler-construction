@@ -43,6 +43,7 @@ data Token
   | Nat      { fromNat     :: Int    }    -- ^ Nat/Int.
   | Spec     { fromSpec    :: Char   }    -- ^ Special character.
   | StrLit   { fromStrLit  :: String }    -- ^ String (as used in prim)
+  deriving (Eq, Ord, Show, Read)
 
 instance Symbol Token where
   describe (Keyword _)  lexeme = "keyword "  ++ lexeme
@@ -103,12 +104,14 @@ spec_ = Spec <$> anyCharFrom "()=\\."
 strlit_ :: Lexer Token
 strlit_ = StrLit <$ char '"' <*> go where
   go = "" <$ char '"'
-    <|> (:) <$> (escape <$ char '\\' <*> anyChar) <*> go
-    <|> (:) <$> anyChar <*> go
+    <|> (:) <$> (escape <$ char '\\' <*> anyCharFrom escapeChars) <*> go
+    <|> (:) <$> anyCharBut escapeChars <*> go
+
+  escapeChars = "\\\""
 
   escape '\\' = '\\'
   escape '"' = '"'
-  escape _ = error "invalid escape sequence"
+  escape _ = error "invalid escape sequence - should not happen"
 
 -- | The 'Lexer' for the language.
 lexer :: Lexer Token

@@ -9,12 +9,26 @@ import qualified UHC.Light.Compiler.CoreRun.API as CR
 
 data Mod
   | Mod  main  :: Exp
+         meta  :: MetaL
          binds :: BindL
+
+data MetaDataCon
+  | MetaDataCon name :: String
+                tag  :: Int
+
+type MetaDataConL = [MetaDataCon]
+
+data Meta
+  | MetaDataType name  :: String
+                 dcons :: MetaDataConL
+
+type MetaL = [Meta]
 
 data Ref
   | Glob offset     :: {Int}
   | Loc  levdiff    :: {Int}
          offset     :: {Int}
+  | Tag  ref        :: Ref
 
 type RefL = [Ref]
 

@@ -56,8 +56,10 @@ attr Tm Tm_
   syn noLetTm     :: Tm
 
 sem ToANF
-  | ToANF lhs.anf   = introduceLets @t.noLetTm @t.bindings
-          t.counter = 0
+  | ToANF loc.mainThunkRef = toSpecialName 0
+          loc.mainThunk = Tm @t.pos $ Let @mainThunkRef @t.noLetTm (Tm @t.pos $ Var @mainThunkRef)
+          lhs.anf   = introduceLets @mainThunk @t.bindings
+          t.counter = 1
 
 sem TmL
   | Cons  loc.unique :: uniqueref counter
@@ -94,83 +96,3 @@ sem Tm_
         loc.anfBindArg = varOrBind @uniqueArg @lhs.pos (introduceLets @t2.noLetTm @t2.bindings)
         lhs.noLetTm  = Tm @lhs.pos $ App (fst @anfBindFun) (fst @anfBindArg)
         lhs.bindings = snd @anfBindFun ++ snd @anfBindArg
-        
-{-sem Tm_
-  | Var Nat lhs.anf = @self
-  | Lam 
-  | App loc.unique :: uniqueref counter
-        loc.anfref = toSpecialName @unique
-        lhs.aenv   = if isANF @t2.anf then @t2.aenv            else Map.insert @anfref @t2.anf @t2.aenv
-        lhs.anf    = if isANF @t2.anf then App @t1.anf @t2.anf else App @t1.anf (Var (toSpecialName @anfref))
-  | Let
-
-attr Tm  syn anf :: Tm
-attr Tm_ syn anf_ :: Tm_
-
-sem Tm
-  | Tm lhs.anf = Tm @pos @t.anf_
-
-sem Tm_
-  | Var Nat lhs.anf_ = @self
-  | Lam lhs.anf_ = Lam @x @t1.anf
-  | App lhs.anf_ = if isANF @t1 then @t1.anf else Let (binds @t2) ( App bind @t1 )
-  | Let lhs.anf_ = Let @x @t1.anf @t2.anf
--}
-{-
-
-let x = let y = 5 in y ni in id (id x) ni
-
-[("y", 5)
-,("x","y")]
-,("$1", id x)]
-
-Example 1:
-
-let fv = 5 in
-let id = \x . x in
-((id id) id) (id (id (id fv)))
-ni ni
-
-Example 2:
-
-let fv = 5 in 
-let id = \x . x in
-(id (id id)) (id fv)
-ni ni
-
-let fv = 5 in 
-let id = \x . x in
-  let y = id id in 
-      let idfv = id fv in
-        (id y) idfv
-ni ni ni ni
-
-module Main 104 -> app (app (m.1)(m.2))(m.3);
-5;
-\1,100 -> d.0.0;
-app (m.1)(m.1);
-app (m.1)(m.0);
-
-app (app d.0.0 (app d.0.1 1)) 2
-
-
-
-app (let 2 -> app d.0.1 1 in app d.0.0 d.0.2) 2
--}
-
-{-
-
-hmToANF :: Tm -> Tm
-hmToANF (Tm sp t) = Tm sp (toANF t)
-
-toANF :: Tm_ -> Tm_
-toANF n@(Nat _)             = n
-toANF v@(Var _)             = v
-toANF (Lam x t1)            = Lam x (hmToANF t1)
--- TODO: figure out appBind and lamBind (name + counter?)
-toANF (App t1 t2@(App _ _)) = Let (Var appBind) {- = -} (hmToANF t2) {- in -} (App (hmToANF t1) (Var appBind))
-toANF (App t1 t2@(Lam _ _)) = Let (Var lamBind) {- = -} (hmToANF t2) {- in -} (App (hmToANF t1) (Var lamBind))
-toANF (App t1 t2)           = App   (hmToANF t1) (hmToANF t2) 
-toANF (Let x t1 t2)         = Let x (hmToANF t1) (hmToANF t2)
-
--}

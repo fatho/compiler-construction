@@ -19,6 +19,9 @@ data DeclRef
   deriving (Eq, Ord, Show, Read)
 
 type Environment = Map.Map Var DeclRef
+
+boolMeta :: CR.Meta
+boolMeta = CR.MetaDataType "Bool" [CR.MetaDataCon "False" 0, CR.MetaDataCon "True" 1]
 }
 
 data HMToCR
@@ -29,7 +32,7 @@ attr HMToCR
 
 sem HMToCR
   | HMToCR loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList @root.globalBinds
-           lhs.mod      = CR.Mod @root.exp @loc.modBinds
+           lhs.mod      = CR.Mod @root.exp [boolMeta] @loc.modBinds
            -- pass inherited attributes
            root.level        = 0
            root.globalScope  = True
@@ -86,8 +89,6 @@ sem Tm_
           args.forceEval = True
           lhs.exp = foldr (\(sl,arg) -> CR.Let (CR.Bind (CR.Loc 0 sl) arg)) (CR.Prim @fn @argRefs) @argSlots
 
--- CR.Let (CR.Bind (CR.Loc 0 @lhs.offset) @t1.exp) $ 
--- (CR.SExp $ CR.Var $ CR.Loc 0 @lhs.offset)
   | App lhs.exp   = optForceEval @lhs.forceEval $ CR.App @t1.exp [expToSExp @t2.exp]
         t1.offset = notRequired $ @lhs.offset -- always takes one argument
         t2.offset = notRequired $ @lhs.offset
@@ -134,7 +135,7 @@ sem Tm_
         
    | If loc.thunkValRef = CR.Loc 0 @lhs.offset
         lhs.exp    = CR.Let (CR.Bind @thunkValRef (CR.Eval @cond.exp)) $
-                        CR.Case (CR.Var @thunkValRef) [@t2.exp, @t1.exp]
+                        CR.Case (CR.Var $ CR.Tag @thunkValRef) [@t2.exp, @t1.exp]
         --lhs.offset = @lhs.offset + 1
         cond.forceEval = False
         --t1.level   = @lhs.level + 1
@@ -164,4 +165,5 @@ optForceEval False x = x
 
 notRequired :: a -> b
 notRequired _ = error "has the program been passed to 'hm-to-anf'?"
+
 }

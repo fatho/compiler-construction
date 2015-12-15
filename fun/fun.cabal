@@ -40,30 +40,53 @@ library
                      , CCO.SystemF
                      , CCO.SystemF.AG
                      , CCO.SystemF.Base
-  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3, containers
+  build-depends:       base >= 4 && < 5
+                     , uu-cco >= 0.1.0.1
+                     , uhc-light >= 1.1.9.2
+                     , uhc-util >= 0.1.6.3
+                     , containers
+                     , vector
+  ghc-prof-options:    -fprof-auto
   hs-source-dirs:      src/lib
 
 executable hm-to-cr
   main-is:             HMToCR.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
+  ghc-prof-options:    -fprof-auto
+                       -rtsopts
   hs-source-dirs:      src/hm-to-cr
 
 executable hm-to-anf
   main-is:             HMToANF.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
+  ghc-prof-options:    -fprof-auto
+                       -rtsopts
   hs-source-dirs:      src/hm-to-anf
 
 executable parse-hm
   main-is:             ParseHM.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
+  ghc-prof-options:    -fprof-auto
+                       -rtsopts
   hs-source-dirs:      src/parse-hm
 
 executable pp-systemf
   main-is:             PpSystemF.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, fun
+  ghc-prof-options:    -fprof-auto
+                       -rtsopts
   hs-source-dirs:      src/pp-systemf
 
 executable pp-core
   main-is:             PpCore.hs
   build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3, fun
+  ghc-prof-options:    -fprof-auto
+                       -rtsopts
   hs-source-dirs:      src/pp-core
+
+executable parse-hm-to-anf-to-cr
+  main-is:             DoAllMain.hs
+  build-depends:       base >= 4 && < 5, uu-cco >= 0.1.0.1, uhc-light >= 1.1.9.2, uhc-util >= 0.1.6.3, fun
+  ghc-prof-options:    -fprof-auto
+                       -rtsopts
+  hs-source-dirs:      src/parse-hm-to-anf-to-cr

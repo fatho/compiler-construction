@@ -1,5 +1,4 @@
-CABAL-CONFIGURE-FLAGS := --user
-CABAL-BUILD-FLAGS     :=
+CABAL_CONFIGURE_FLAGS := $(CABAL_CONFIGURE_FLAGS) --user
 
 all : haskell
 
@@ -15,11 +14,11 @@ src/lib/CCO/Core/AG.hs : src/lib/CCO/Core/AG.ag src/lib/CCO/Core/AG/Base.ag \
 	uuagc -Hdcfws --self -P src/lib/CCO/Core src/lib/CCO/Core/AG.ag
 
 haskell : src/lib/CCO/Core/AG.hs src/lib/CCO/HM/AG.hs src/lib/CCO/SystemF/AG.hs
-	cabal configure $(CABAL-CONFIGURE-FLAGS)
-	cabal build $(CABAL-BUILD-FLAGS)
+	cabal configure $(CABAL_CONFIGURE_FLAGS)
+	cabal build $(CABAL_BUILD_FLAGS)
 
 clean:
 	cabal clean
 	rm -f "src/lib/CCO/HM/AG.hs" "src/lib/CCO/SystemF/AG.hs" "src/lib/CCO/Core/AG.hs"
 
-.PHONY : all haskell clean
+.PHONY : all haskell clean prof

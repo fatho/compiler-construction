@@ -2,6 +2,8 @@ imports
 {
 import           UHC.Light.Compiler.Base.API
 import qualified UHC.Light.Compiler.CoreRun.API as CR
+import qualified UHC.Light.Compiler.CoreRun.API.Internal as CRI
+import qualified Data.Vector as V
 }
 
 -------------------------------------------------------------------------------
@@ -12,7 +14,24 @@ attr Mod
   syn crmod :: {CR.Mod}
 
 sem Mod
-  | Mod  lhs    .   crmod   =   CR.mkMod (mkHNm "Main") Nothing (length @binds.crbindl + 100) @binds.crbindl @main.crexp
+    | Mod  lhs    .   crmod   =   CR.mkModWithMetas (mkHNm "Main") 
+                                                    Nothing 
+                                                    (length @binds.crbindl + 100) 
+                                                    @meta.crmetal -- <- meta information
+                                                    (V.fromList @binds.crbindl)
+                                                    @main.crexp
+
+attr Meta MetaL
+  syn crmetal use {++} {[]} :: {[CR.Meta]}
+
+attr MetaDataCon MetaDataConL
+  syn crdataconl use {++} {[]} :: {[CR.DataCon]}
+
+sem Meta
+  | MetaDataType lhs.crmetal = [ CR.mkMetaDataType (mkHNm @name) @dcons.crdataconl ]
+
+sem MetaDataCon
+  | MetaDataCon lhs.crdataconl = [ CR.mkMetaDataCon (mkHNm @name) @tag ]
 
 attr SExpL SExp
   syn crsexpl use {++} {[]} :: {[CR.SExp]}
@@ -53,6 +72,7 @@ attr RefL Ref
 sem Ref
   | Glob  lhs   .   crrefl  =   [CR.mkModRef @offset]
   | Loc   lhs   .   crrefl  =   [CR.mkLocDifRef @levdiff @offset]
+  | Tag   lhs   .   crrefl  =   map CRI.RRef_Tag @ref.crrefl
 
 
 -------------------------------------------------------------------------------

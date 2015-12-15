@@ -78,7 +78,10 @@ pPrim = (\pos fn args -> Tm pos (Prim fn args))
   <*  keyword "prim"
   <*> strLit
   <*> many
-      (  pNat <|>
+      (  
+         pLet <|>
+         pIf  <|>
+         pNat <|>
          pVar <|>
          pPar
       )

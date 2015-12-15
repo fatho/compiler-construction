@@ -35,9 +35,17 @@ import Control.Applicative        (Applicative ((<*>)), (<$>))
 -- Tree instances
 -------------------------------------------------------------------------------
 
+instance Tree MetaDataCon where
+  fromTree (MetaDataCon name dcons) = T.App "MetaDataCon" [fromTree name, fromTree dcons]
+  toTree = parseTree [app "MetaDataCon" (MetaDataCon <$> arg <*> arg)]
+  
+instance Tree Meta where
+  fromTree (MetaDataType name dcons) = T.App "MetaDataType" [fromTree name, fromTree dcons]
+  toTree = parseTree [app "MetaDataType" (MetaDataType <$> arg <*> arg)]
+
 instance Tree Mod where
-  fromTree (Mod mn bs) = T.App "Mod" [fromTree mn, fromTree bs]
-  toTree = parseTree [app "Mod" (Mod <$> arg <*> arg)]
+  fromTree (Mod mn meta bs) = T.App "Mod" [fromTree mn, fromTree meta, fromTree bs]
+  toTree = parseTree [app "Mod" (Mod <$> arg <*> arg <*> arg)]
 
 instance Tree Bind where
   fromTree (Bind x e) = T.App "Bind" [fromTree x, fromTree e]
@@ -54,9 +62,11 @@ instance Tree SExp where
 instance Tree Ref where
   fromTree (Glob  o)  = T.App "Glob" [fromTree o]
   fromTree (Loc d o)  = T.App "Loc" [fromTree d, fromTree o]
+  fromTree (Tag  o)  = T.App "Tag" [fromTree o]
 
   toTree = parseTree [ app "Glob" (Glob <$> arg)
                      , app "Loc"  (Loc  <$> arg <*> arg)
+                     , app "Tag" (Tag <$> arg)
                      ]
 
 instance Tree Exp where

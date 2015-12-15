@@ -8,5 +8,4 @@ if [ -z "$1" ]
     FILE=$1
 fi
 
-cat $FILE | ./dist/build/parse-hm/parse-hm | ./dist/build/hm-to-anf/hm-to-anf | 
-	./dist/build/hm-to-cr/hm-to-cr | ./dist/build/pp-core/pp-core
+cat $FILE | ./dist/build/parse-hm-to-anf-to-cr/parse-hm-to-anf-to-cr
