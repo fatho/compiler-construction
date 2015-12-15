@@ -16,7 +16,7 @@ attr Mod
 sem Mod
     | Mod  lhs    .   crmod   =   CR.mkModWithMetas (mkHNm "Main") 
                                                     Nothing 
-                                                    (length @binds.crbindl + 100) 
+                                                    @stksize 
                                                     @meta.crmetal -- <- meta information
                                                     (V.fromList @binds.crbindl)
                                                     @main.crexp
@@ -47,7 +47,7 @@ attr Exp ExpL
 
 sem Exp
   | SExp loc    .   crexp   =   CR.mkExp (head @sexp.crsexpl)
-  | Lam  loc    .   crexp   =   CR.mkLam (length @args.crrefl) 100 @body.crexp
+  | Lam  loc    .   crexp   =   CR.mkLam (length @args.crrefl) @stksize @body.crexp
   | App  loc    .   crexp   =   CR.mkApp @func.crexp @args.crsexpl
   | Prim loc    .   crexp   =   CR.mkFFI @func       @args.crsexpl
   | Node loc    .   crexp   =   CR.mkTup @tag        @args.crsexpl
@@ -80,18 +80,26 @@ sem Ref
 -------------------------------------------------------------------------------
 
 attr Exp ExpL
-  inh stkoff :: {Int}
+  inh stkoff  :: {Int}
+  inh stksize :: {Int}
 attr Bind BindL
-  chn stkoff :: {Int}
+  chn stkoff  :: {Int}
+  inh stksize :: {Int}
 
 sem Mod
-  | Mod  binds  .   stkoff  =   0
+  | Mod  loc    .   stksize =   length @binds.crbindl + length @meta.crmetal + 2 -- for main and main exp
+         binds  .   stkoff  =   0
+         binds  .   stksize =   length @meta.crmetal + 2 
          main   .   stkoff  =   @binds.stkoff
+         main   .   stksize =   @stksize
 
 sem Bind
   | Bind xexp   .   stkoff  =   0
+         xexp   .   stksize =   @lhs.stksize
          lhs    .   stkoff  =   @lhs.stkoff + 1
 
 sem Exp
   | Lam  body   .   stkoff  =   length @args.crrefl
+         loc    .   stksize =   @lhs.stksize + length @args.crrefl
+         body   .   stksize =   @stksize
 
