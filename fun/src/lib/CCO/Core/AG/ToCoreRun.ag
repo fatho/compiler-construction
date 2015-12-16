@@ -16,7 +16,7 @@ attr Mod
 sem Mod
     | Mod  lhs    .   crmod   =   CR.mkModWithMetas (mkHNm "Main") 
                                                     Nothing 
-                                                    (@binds.stksize + @main.stksize + length @meta.crmetal)
+                                                    (@main.stksize + @binds.stksize + length @meta.crmetal)
                                                     @meta.crmetal -- <- meta information
                                                     (V.fromList @binds.crbindl)
                                                     @main.crexp
@@ -47,7 +47,7 @@ attr Exp ExpL
 
 sem Exp
   | SExp loc    .   crexp   =   CR.mkExp (head @sexp.crsexpl)
-  | Lam  loc    .   crexp   =   CR.mkLam (length @args.crrefl) @body.stksize @body.crexp
+  | Lam  loc    .   crexp   =   CR.mkLam (length @args.crrefl) (length @args.crrefl + @body.stksize) @body.crexp
   | App  loc    .   crexp   =   CR.mkApp @func.crexp @args.crsexpl
   | Prim loc    .   crexp   =   CR.mkFFI @func       @args.crsexpl
   | Node loc    .   crexp   =   CR.mkTup @tag        @args.crsexpl
@@ -94,11 +94,12 @@ sem Bind
 
 sem Exp
   | Lam  body   .   stkoff  =   length @args.crrefl
+  
 
 -------------------------------------------------------------------------------
 -- Stack size
 -------------------------------------------------------------------------------  
-  
+
 attr ExpL Exp
   syn stksize use {(+)} {0} :: {Int}
   
@@ -110,10 +111,11 @@ sem Bind
 
 sem Exp
   | SExp lhs.stksize  = 1
-  | Lam  lhs.stksize  = length @args.crrefl + @body.stksize
+  | Lam  lhs.stksize  = 1 --new scope / handled in the sem Exp by mkLam
   | App  lhs.stksize  = @func.stksize + length @args.crsexpl
-  | Prim lhs.stksize  = 1 + length @args.crsexpl
-  | Node lhs.stksize  = 1 + length @args.crsexpl
-  | Case lhs.stksize  = 1 + @alts.stksize
+  | Prim lhs.stksize  = length @args.crsexpl -- arguments on the stack but what about primitive function call ???? 
+  | Node lhs.stksize  = length @args.crsexpl
+  | Case lhs.stksize  = @alts.stksize
   | Let  lhs.stksize  = @bind.stksize + @body.stksize
   | Dbg  lhs.stksize  = 0
+-- | Eval copy rule
