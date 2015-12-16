@@ -16,7 +16,7 @@ attr Mod
 sem Mod
     | Mod  lhs    .   crmod   =   CR.mkModWithMetas (mkHNm "Main") 
                                                     Nothing 
-                                                    (@main.stksize + @binds.stksize + length @meta.crmetal)
+                                                    (@main.stksize + @binds.stksize)
                                                     @meta.crmetal -- <- meta information
                                                     (V.fromList @binds.crbindl)
                                                     @main.crexp
@@ -101,8 +101,12 @@ sem Exp
 -------------------------------------------------------------------------------  
 
 attr ExpL Exp
-  syn stksize use {(+)} {0} :: {Int}
-  
+  syn stksize use {max} {0} :: {Int} -- TODO: Observe whether max is indeed the right thing
+  -- Reason why "max" should be right: 
+  --  ExpL is only used for Case expressions, and there, only one branch is ever executed, so
+  -- the stack size of the whole Case expression should be the largest stack size of one of the
+  -- alternatives 
+
 attr BindL Bind
   syn stksize use {(+)} {0} :: {Int}
   
