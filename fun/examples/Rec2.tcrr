@@ -1,4 +1,4 @@
-module Main 10 -> eval(m.7);
+module Main 9 -> eval(m.7);
 data "Bool" = "False" -> 0, "True" -> 1;
 \0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,2 -> let 0 -> \0,4 -> let 0 -> eval(d.4.0); in
                                                          let 1 -> eval(d.2.0); in
@@ -18,7 +18,7 @@ data "Bool" = "False" -> 0, "True" -> 1;
                                                                           eval(app (eval(d.0.0))(d.0.1)); in
                                                          eval(app (eval(d.4.0))(d.0.0)); in
                                         eval(app (eval(d.0.0))(d.0.1));
-\0,1 -> \1,2 -> \0,6 -> let 0 -> \0,4 -> let 0 -> \0,2 -> eval(app (eval(m.0))(d.3.0)); in
+\0,1 -> \1,2 -> \0,5 -> let 0 -> \0,4 -> let 0 -> \0,2 -> eval(app (eval(m.0))(d.3.0)); in
                                          let 1 -> \0,1 -> 0; in
                                          eval(app (eval(d.0.0))(d.0.1)); in
                         let 1 -> \0,1 -> 0; in
