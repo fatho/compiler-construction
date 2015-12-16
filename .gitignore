@@ -23,3 +23,6 @@ cabal.sandbox.config
 fun/src/lib/CCO/Core/AG.hs
 fun/src/lib/CCO/HM/AG.hs
 fun/src/lib/CCO/SystemF/AG.hs
+fun/compile.bat
+fun/stack.yaml
+fun/mysh/

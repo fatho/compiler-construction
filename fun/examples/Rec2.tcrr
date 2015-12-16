@@ -1,0 +1,33 @@
+module Main 10 -> eval(m.7);
+data "Bool" = "False" -> 0, "True" -> 1;
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,2 -> let 0 -> \0,4 -> let 0 -> eval(d.4.0); in
+                                                         let 1 -> eval(d.2.0); in
+                                                         ffi "primEqInt"(d.0.0,d.0.1); in
+                                        eval(d.0.0);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,2 -> let 0 -> \0,4 -> let 0 -> eval(d.4.0); in
+                                                         let 1 -> eval(d.2.0); in
+                                                         ffi "primAddInt"(d.0.0,d.0.1); in
+                                        eval(d.0.0);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,2 -> let 0 -> \0,4 -> let 0 -> eval(d.4.0); in
+                                                         let 1 -> eval(d.2.0); in
+                                                         ffi "primSubInt"(d.0.0,d.0.1); in
+                                        eval(d.0.0);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,4 -> let 0 -> \0,2 -> eval(app (eval(m.1))(d.2.0)); in
+                                        let 1 -> \0,3 -> let 0 -> \0,4 -> let 0 -> \0,2 -> eval(app (eval(m.2))(d.4.0)); in
+                                                                          let 1 -> \0,1 -> 1; in
+                                                                          eval(app (eval(d.0.0))(d.0.1)); in
+                                                         eval(app (eval(d.4.0))(d.0.0)); in
+                                        eval(app (eval(d.0.0))(d.0.1));
+\0,1 -> \1,2 -> \0,6 -> let 0 -> \0,4 -> let 0 -> \0,2 -> eval(app (eval(m.0))(d.3.0)); in
+                                         let 1 -> \0,1 -> 0; in
+                                         eval(app (eval(d.0.0))(d.0.1)); in
+                        let 1 -> \0,1 -> 0; in
+                        let 2 -> \0,3 -> let 0 -> \0,2 -> eval(app (eval(m.3))(m.4)); in
+                                         eval(app (eval(d.0.0))(d.2.0)); in
+                        let 3 -> eval(d.0.0); in
+                        case d.0.3.tag of
+                         -> eval(d.0.2);
+                         -> eval(d.0.1);;
+\0,2 -> eval(app (eval(m.3))(m.4));
+\0,1 -> 10;
+\0,2 -> eval(app (eval(m.4))(m.6));
