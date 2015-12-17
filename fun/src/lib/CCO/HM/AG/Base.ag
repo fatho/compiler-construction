@@ -9,6 +9,7 @@ import CCO.SourcePos
 
 {
 type Var = String    -- ^ Type of variables.
+type Name = String   -- ^ Names of datatypes and constructors and primitive functions
 }
 
 data Mod
@@ -18,13 +19,13 @@ data DataTy
   | DataTy pos :: {SourcePos} dty :: DataTy_ 
   
 data DataTy_
-  | DataTy_ name :: String dcons :: DataConL
+  | DataTy_ name :: Name dcons :: DataConL
 
 data DataCon
   | DataCon pos :: {SourcePos} dcon :: DataCon_
 
 data DataCon_
-  | DataCon_ name :: String arity :: Int
+  | DataCon_ name :: Name arity :: Int
   
 type DataConL = [DataCon]
 

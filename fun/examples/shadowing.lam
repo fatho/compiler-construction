@@ -1,0 +1,6 @@
+let x = 5 in
+let y = 40 in 
+let x = 1010 in
+let y = 20 in
+prim "primAddInt" x y 
+ni ni ni ni

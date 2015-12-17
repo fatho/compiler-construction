@@ -5,7 +5,7 @@ imports
 {
 import qualified CCO.Core.AG as CR
 import qualified Data.Map as Map
-
+import qualified Data.Set as Set
 import Debug.Trace
 }
 
@@ -16,44 +16,75 @@ import Debug.Trace
 data DeclRef
   = DeclLoc { declLocLevel :: Int, declLocOffset :: Int}
   | DeclGlob { declGlobOffset :: Int }
+  | DeclTag { declRef :: DeclRef }
   deriving (Eq, Ord, Show, Read)
 
-type Environment = Map.Map Var DeclRef
+type Environment = Map.Map String DeclRef
 
-boolMeta :: CR.Meta
-boolMeta = CR.MetaDataType "Bool" [CR.MetaDataCon "False" 0, CR.MetaDataCon "True" 1]
+type GlobalBinds = Map.Map Int CR.Exp
 }
 
 attr Mod
   syn mod                  :: {CR.Mod}
 
 sem Mod
-  | Mod loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList @tm.globalBinds
+  | Mod loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList (@dataTypes.globalBinds `Map.union` @tm.globalBinds)
         lhs.mod      = CR.Mod @tm.exp @dataTypes.metal @loc.modBinds
         -- pass inherited attributes
+        dataTypes.globalOffset = 0
+        dataTypes.env          = Map.empty
+        dataTypes.names        = Set.empty
         tm.level        = 0
         tm.globalScope  = True
-        tm.globalOffset = 0
-        tm.env          = Map.empty
+        tm.globalOffset = length @dataTypes.globalBinds
+        tm.env          = @dataTypes.env
         tm.offset       = 0
         tm.forceEval    = True
 
+-- TODO: for error messages add SourcePos for datatypes and constructors in Pos.AG 
+--       add debug information, the corerun starts to be a bit unclear with the allocs without the appropriate constructor in comments..
+
 attr DataTyL DataTy DataTy_
-  syn metal use {++} {[]} :: {CR.MetaL}
+  chn globalOffset                              :: Int
+  -- for storing all the names of the datatypes and checking if they are unique
+  chn names                                     :: {Set.Set Name}
+  -- a mapping of all constructors to global bindings
+  chn env                                       :: {Environment}
+  syn globalBinds use {`Map.union`} {Map.empty} :: {GlobalBinds}
+  syn metal       use {++}          {[]}        :: {CR.MetaL}  
 
 attr DataConL DataCon DataCon_
-  inh conIndex :: Int
-  syn metaConl use {++} {[]} :: {CR.MetaDataConL}
+  chn globalOffset                              :: Int
+  -- a mapping of all constructors to global bindings
+  chn env                                       :: {Environment}
+  inh conIndex                                  :: Int
+  syn globalBinds use {`Map.union`} {Map.empty} :: {GlobalBinds}
+  syn metaConl    use {++}          {[]}        :: {CR.MetaDataConL}  
   
 sem DataTy_
-  | DataTy_ lhs . metal = [ CR.MetaDataType @name @dcons.metaConl ]
-           dcons . conIndex = 0
+  | DataTy_ loc   . uniqueDataTy = uniqueDataType @name @lhs.names
+            lhs   . names        = Set.insert @name @lhs.names
+            lhs   . metal        = [ CR.MetaDataType @uniqueDataTy @dcons.metaConl ]
+            dcons . conIndex     = 0
 
 sem DataConL
-  | Cons tl . conIndex = @lhs.conIndex + 1
+  | Cons tl . conIndex     = @lhs.conIndex     + 1
+         tl . globalOffset = @lhs.globalOffset + 1
 
 sem DataCon_
-  | DataCon_ lhs . metaConl = [ CR.MetaDataCon @name @lhs.conIndex ]
+  | DataCon_ loc . argRefs     = map (CR.Loc 0) [0 .. @arity - 1]
+             loc . varRefs     = map CR.Var     @argRefs
+             loc . node        = 
+                if @arity == 0
+                    then CR.Node @lhs.conIndex []
+                    else CR.Node @lhs.conIndex @varRefs
+             lhs . globalBinds = 
+                if @arity == 0 
+                    then Map.insert @lhs.globalOffset @node                   Map.empty
+                    else Map.insert @lhs.globalOffset (CR.Lam @argRefs @node) Map.empty
+             loc . uniqueCon   = uniqueConstructor @name @lhs.env
+             lhs . env         = Map.insert @uniqueCon (DeclGlob @lhs.globalOffset) @lhs.env
+             lhs . metaConl    = [ CR.MetaDataCon @name @lhs.conIndex ]
 
 attr Tm Tm_
   syn exp                  :: {CR.Exp}
@@ -68,7 +99,7 @@ attr Tm Tm_ TmL
   -- and handled by HMToCR
   inh globalScope          :: Bool
   inh globalOffset         :: Int
-  syn globalBinds use {`Map.union`} {Map.empty} :: {Map.Map Int CR.Exp}
+  syn globalBinds use {`Map.union`} {Map.empty} :: GlobalBinds
   -- local stack offset
   inh offset               :: {Int}
   inh forceEval            :: {Bool}
@@ -180,4 +211,13 @@ optForceEval False x = x
 notRequired :: a -> b
 notRequired _ = error "has the program been passed to 'hm-to-anf'?"
 
+uniqueDataType :: Name -> Set.Set Name -> Name
+uniqueDataType name names = case Set.member name names of
+    True  -> error $ "Datatype \"" ++ name ++ "\" is not unique"
+    False -> name
+
+uniqueConstructor :: Name -> Environment -> Name
+uniqueConstructor name env = case Map.member name env of
+    True  -> error $ "Data Constructor \"" ++ name ++ "\" is not unique"
+    False -> name
 }
