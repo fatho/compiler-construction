@@ -17,7 +17,7 @@ module CCO.HM.Parser (
     parser    -- :: Component String Tm
 ) where
 
-import CCO.HM.Base                     (Var, Tm (Tm), Tm_ (..))
+import CCO.HM.Base --                     (Var, Mod(..), DataTy(..), DataTy_(..), DataCon(..), Tm (Tm), Tm_ (..))
 import CCO.HM.Lexer                    (Token, lexer, keyword, var, nat, spec, strLit)
 import CCO.Component                   (Component)
 import qualified CCO.Component as C    (parser)
@@ -36,8 +36,26 @@ type TokenParser = Parser Token
 -------------------------------------------------------------------------------
 
 -- A 'Component' for parsing terms.
-parser :: Component String Tm
-parser = C.parser lexer (pTm <* eof)
+parser :: Component String Mod
+parser = C.parser lexer (pMod <* eof)
+
+-- | Parses a 'Mod'.
+pMod :: TokenParser Mod
+pMod = Mod <$> many pDataTy <*> pTm
+
+pDataTy :: TokenParser DataTy
+pDataTy = (\pos name alts -> DataTy pos (DataTy_ name alts))
+  <$> sourcePos
+  <*  keyword "data"
+  <*> var
+  <*  spec '='
+  <*> someSepBy (spec '|') pDataCon 
+
+pDataCon :: TokenParser DataCon
+pDataCon = (\pos name arity -> DataCon pos (DataCon_ name arity))
+  <$> sourcePos
+  <*> var
+  <*> opt (spec '(' *> nat <* spec ')') 0
 
 -- | Parses a 'Tm'.
 pTm :: TokenParser Tm

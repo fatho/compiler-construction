@@ -11,6 +11,25 @@ import CCO.SourcePos
 type Var = String    -- ^ Type of variables.
 }
 
+data Mod
+  | Mod dataTypes :: DataTyL tm :: Tm
+
+data DataTy
+  | DataTy pos :: {SourcePos} dty :: DataTy_ 
+  
+data DataTy_
+  | DataTy_ name :: String dcons :: DataConL
+
+data DataCon
+  | DataCon pos :: {SourcePos} dcon :: DataCon_
+
+data DataCon_
+  | DataCon_ name :: String arity :: Int
+  
+type DataConL = [DataCon]
+
+type DataTyL = [DataTy]
+
 data Tm
   | Tm  pos :: {SourcePos}  t :: Tm_
 

@@ -14,13 +14,17 @@
 
 module CCO.HM (
     -- * Syntax
-    Var                         -- = String
-  , Tm (Tm)                     -- instances: Tree
-  , Tm_ (Var, Lam, App, Let)    -- instances: Tree
-
+    Var                                 -- = String
+  , Mod (..)
+  , Tm (Tm)                             -- instances: Tree
+  , Tm_ (..)                            -- instances: Tree
+  , DataTy (..)
+  , DataTy_ (..)
+  , DataCon (..)
+  , DataCon_ (..)
     -- * Parser
   , parser                      -- :: Component String Tm
 ) where
 
-import CCO.HM.Base      (Var, Tm (Tm), Tm_ (Var, Lam, App, Let))
+import CCO.HM.Base
 import CCO.HM.Parser    (parser)

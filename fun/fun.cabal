@@ -40,6 +40,7 @@ library
                      , CCO.SystemF
                      , CCO.SystemF.AG
                      , CCO.SystemF.Base
+                     , CCO.Semantics
   build-depends:       base >= 4 && < 5
                      , uu-cco >= 0.1.0.1
                      , uhc-light >= 1.1.9.2

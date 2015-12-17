@@ -15,8 +15,13 @@
 module CCO.HM.Base (
     -- * Syntax
     Var                                 -- = String
+  , Mod (..)
   , Tm (Tm)                             -- instances: Tree
   , Tm_ (..)                            -- instances: Tree
+  , DataTy (..)
+  , DataTy_ (..)
+  , DataCon (..)
+  , DataCon_ (..)
 ) where
 
 import CCO.HM.AG
@@ -28,6 +33,26 @@ import Control.Applicative        (Applicative ((<*>)), (<$>))
 -------------------------------------------------------------------------------
 -- Tree instances
 -------------------------------------------------------------------------------
+
+instance Tree Mod where
+  fromTree (Mod dat tm) = T.App "Mod" [fromTree dat, fromTree tm]
+  toTree = parseTree [app "Mod" (Mod <$> arg <*> arg)]
+
+instance Tree DataCon where
+  fromTree (DataCon pos t) = T.App "DataCon" [fromTree pos, fromTree t]
+  toTree = parseTree [app "DataCon" (DataCon <$> arg <*> arg)]
+
+instance Tree DataTy where
+  fromTree (DataTy pos t) = T.App "DataTy" [fromTree pos, fromTree t]
+  toTree = parseTree [app "DataTy" (DataTy <$> arg <*> arg)]
+
+instance Tree DataCon_ where
+  fromTree (DataCon_ name arity) = T.App "DataCon_" [fromTree name, fromTree arity]
+  toTree = parseTree [app "DataCon_" (DataCon_ <$> arg <*> arg)]
+
+instance Tree DataTy_ where
+  fromTree (DataTy_ pos dcons) = T.App "DataTy_" [fromTree pos, fromTree dcons]
+  toTree = parseTree [app "DataTy_" (DataTy_ <$> arg <*> arg)]
 
 instance Tree Tm where
   fromTree (Tm pos t) = T.App "Tm" [fromTree pos, fromTree t]

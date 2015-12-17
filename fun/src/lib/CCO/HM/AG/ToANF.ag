@@ -36,11 +36,8 @@ type Bindings = [(String, SourcePos, Tm)]
 
 }
 
-data ToANF
-  | ToANF t :: Tm
-
-attr ToANF
-  syn anf :: Tm
+attr Mod
+  syn anf :: Mod
 
 attr Tm Tm_ TmL
   -- syn anf         :: Tm_
@@ -55,11 +52,11 @@ attr TmL
 attr Tm Tm_
   syn noLetTm     :: Tm
 
-sem ToANF
-  | ToANF loc.mainThunkRef = toSpecialName 0
-          loc.mainThunk = Tm @t.pos $ Let @mainThunkRef @t.noLetTm (Tm @t.pos $ Var @mainThunkRef)
-          lhs.anf   = introduceLets @mainThunk @t.bindings
-          t.counter = 1
+sem Mod
+  | Mod loc.mainThunkRef = toSpecialName 0
+        loc.mainThunk = Tm @tm.pos $ Let @mainThunkRef @tm.noLetTm (Tm @tm.pos $ Var @mainThunkRef)
+        lhs.anf   = Mod @dataTypes.self (introduceLets @mainThunk @tm.bindings)
+        tm.counter = 1
 
 sem TmL
   | Cons  loc.unique :: uniqueref counter

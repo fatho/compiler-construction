@@ -24,22 +24,36 @@ boolMeta :: CR.Meta
 boolMeta = CR.MetaDataType "Bool" [CR.MetaDataCon "False" 0, CR.MetaDataCon "True" 1]
 }
 
-data HMToCR
-  | HMToCR root :: Tm
-
-attr HMToCR
+attr Mod
   syn mod                  :: {CR.Mod}
 
-sem HMToCR
-  | HMToCR loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList @root.globalBinds
-           lhs.mod      = CR.Mod @root.exp [boolMeta] @loc.modBinds
-           -- pass inherited attributes
-           root.level        = 0
-           root.globalScope  = True
-           root.globalOffset = 0
-           root.env          = Map.empty
-           root.offset       = 0
-           root.forceEval    = True
+sem Mod
+  | Mod loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList @tm.globalBinds
+        lhs.mod      = CR.Mod @tm.exp @dataTypes.metal @loc.modBinds
+        -- pass inherited attributes
+        tm.level        = 0
+        tm.globalScope  = True
+        tm.globalOffset = 0
+        tm.env          = Map.empty
+        tm.offset       = 0
+        tm.forceEval    = True
+
+attr DataTyL DataTy DataTy_
+  syn metal use {++} {[]} :: {CR.MetaL}
+
+attr DataConL DataCon DataCon_
+  inh conIndex :: Int
+  syn metaConl use {++} {[]} :: {CR.MetaDataConL}
+  
+sem DataTy_
+  | DataTy_ lhs . metal = [ CR.MetaDataType @name @dcons.metaConl ]
+           dcons . conIndex = 0
+
+sem DataConL
+  | Cons tl . conIndex = @lhs.conIndex + 1
+
+sem DataCon_
+  | DataCon_ lhs . metaConl = [ CR.MetaDataCon @name @lhs.conIndex ]
 
 attr Tm Tm_
   syn exp                  :: {CR.Exp}

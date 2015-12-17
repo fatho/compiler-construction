@@ -1,3 +1,5 @@
+data Bool = False | True
+data List = Nil | Cons(2)
 let eq = \x. \y. prim "primEqInt" x y in
 let add = \x. \y. prim "primAddInt" x y in
 let sub = \x. \y. prim "primSubInt" x y in
