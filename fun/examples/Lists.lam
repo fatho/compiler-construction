@@ -1,0 +1,39 @@
+data Bool = False | True
+data List = Nil | Cons(2)
+
+let eq    = \ x . \ y . prim "primEqInt" x y in
+let add   = \ x . \ y . prim "primAddInt" x y in
+let sub   = \ x . \ y . prim "primSubInt" x y in
+let foldr = \ f . \ x .
+  let go = \ xs .
+    case xs of
+      Nil = x;
+      Cons h t = f h (go t)
+    esac
+  in go ni in
+let foldl = \ f .
+  let go = \ x . \ xs .
+    case xs of
+      Nil = x;
+      Cons h t = go (f x h) t
+    esac
+  in go ni in
+let take  = 
+  \n . \xs .
+    case eq n 0 of
+      True = Nil;
+      False = 
+        case xs of
+          Nil = Nil;
+          Cons h t = Cons h (take (sub n 1) t)
+        esac
+    esac
+  in
+let iterate = \f . let go = \x . Cons x (go (f x)) in go ni in
+let replicate = \n . \x . if eq n 0 then Nil else Cons x (replicate (sub n 1) x) fi in
+let repeat = \x . let xs = Cons x xs in xs ni in
+let sum = foldl add 0 in
+let ones  = repeat 1 in
+let nats  = iterate (add 1) 1 in
+sum (take 10 nats)
+ni ni ni ni ni ni ni ni ni ni ni ni

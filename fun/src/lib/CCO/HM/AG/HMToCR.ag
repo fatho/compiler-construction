@@ -61,7 +61,8 @@ attr DataConL DataCon DataCon_
 
 attr DataConL DataCon DataCon_ DataTyL DataTy DataTy_
   chn globalOffset                              :: Int
-  syn conTags use {Map.union} {Map.empty} :: TagMap
+  -- a map from the constructor names to their assigned tags
+  syn conTags use {Map.union} {Map.empty}       :: TagMap
   syn globalBinds use {`Map.union`} {Map.empty} :: {GlobalBinds}
   chn env                                       :: {Environment}
 
@@ -76,7 +77,10 @@ sem DataConL
          tl . globalOffset = @lhs.globalOffset + 1
 
 sem DataCon_
-  | DataCon_ loc . nodeArgs    = [ CR.Var $ CR.Loc (2 * i + 1) 0 | i <- [@arity - 1, @arity - 2 .. 0] ]
+  | DataCon_ -- The arguments to the node from left to right are gathered from the outermost
+             -- to the innermost lambda expression. Because of laziness, each function-lambda
+             -- is followed by a thunk-lambda.
+             loc . nodeArgs    = [ CR.Var $ CR.Loc (2 * i + 1) 0 | i <- [@arity - 1, @arity - 2 .. 0] ]
              loc . node        = mkThunk $ iterateFun @arity (CR.Lam [CR.Loc 0 0] . mkThunk)
                                                              (CR.Node @lhs.conIndex @nodeArgs)
              lhs . globalBinds = Map.insert @lhs.globalOffset @node Map.empty
@@ -86,6 +90,7 @@ sem DataCon_
              lhs . conTags     = Map.singleton @name @lhs.conIndex
 
 attr Tm Tm_
+  -- the generated expression
   syn exp                  :: {CR.Exp}
 
 attr Tm Tm_ TmL Alt AltL
@@ -102,9 +107,8 @@ attr Tm Tm_ TmL Alt AltL
   -- local stack offset
   inh offset               :: {Int}
   inh forceEval            :: {Bool}
+  -- a map from the constructor names to their assigned tags
   inh conTags              :: TagMap
-  --syn offset               :: {Int}
-  -- the generated expression
 
 attr TmL
   syn expL use {++} {[]}   :: {[CR.Exp]}
@@ -195,22 +199,29 @@ sem Tm_
         t2.globalScope   = False
         cond.globalScope = False
    | Case
+        -- evaluate the scrutinee in a local binding
         loc.thunkValRef = CR.Loc 0 @lhs.offset
+        -- the alternatives are added in ascending order by tag (using 'Map.elems')
         lhs.exp    = CR.Let (CR.Bind @thunkValRef (CR.Eval @scrut.exp)) $
                         CR.Case (CR.Var $ CR.Tag @thunkValRef) (Map.elems $ @alts.altMap)
-        --lhs.offset = @lhs.offset + 1
         scrut.forceEval = False
-        --t1.level   = @lhs.level + 1
+        -- we bound the scrutinee, so + 1
+        -- not that all alternatives share the same offset, 
+        -- because only one of them will eventually be executed
         alts.offset  = @lhs.offset + 1
         alts.globalScope   = False
         alts.scrutRef = DeclLoc @lhs.level @lhs.offset
         scrut.globalScope = False
 
 sem Alt
+  -- The alternative is indexed by the constructor tag in the synthesized attribute
   | Alt lhs.altMap  = Map.singleton (lookupConTag @con @lhs.conTags) @tm.exp
+        -- arity of the constructor (not checked)
         loc.arity   = length @vars
+        -- build references to fields of the scrutinee
         loc.argRefs = map (DeclField @lhs.scrutRef) [0 .. @arity - 1]
         loc.argEnv  = Map.fromList $ zip @vars @argRefs
+        -- bind pattern variables to the fields
         tm.env      = Map.union @lhs.env @loc.argEnv
 
 {
@@ -248,10 +259,12 @@ uniqueConstructor name env = case Map.member name env of
     True  -> error $ "Data Constructor \"" ++ name ++ "\" is not unique"
     False -> name
 
+-- | Looks up the tag of a constructor in the map, and raises an error otherwise.
 lookupConTag :: Name -> TagMap -> Int
 lookupConTag name = fromMaybe err . Map.lookup name where
   err = error $ "Constructor '" ++ name ++ " not found." 
 
+-- | @iterateFun n f x@ applies the function @f@ @n@ times on @x@.
 iterateFun :: Int -> (a -> a) -> a -> a
 iterateFun n f x | n <= 0    = x
                  | otherwise = iterateFun (n-1) f (f x) 

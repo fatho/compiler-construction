@@ -95,13 +95,13 @@ sem Tm_
         lhs.bindings = snd @anfBindFun ++ snd @anfBindArg
 
   | Case  loc.uniqueScrut :: uniqueref counter
-
+          -- bind scrutinee to variable if it's not already a variable
           loc.anfBindScrut = varOrBind @uniqueScrut @lhs.pos (introduceLets @scrut.noLetTm @scrut.bindings)
-
           lhs.noLetTm  = Tm @lhs.pos $ Case (fst @anfBindScrut) @alts.noLetAltL
           lhs.bindings = snd @anfBindScrut ++ @alts.bindings
 
 sem Alt
+  -- alternatives introduces a new scope, where let bindings can be placed
   | Alt loc.uniqueAlt :: uniqueref counter
         lhs.noLetAltL = [ Alt @con @vars (introduceLets @tm.noLetTm @tm.bindings) ]
         lhs.bindings  = []

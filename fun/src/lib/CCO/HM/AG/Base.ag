@@ -44,11 +44,16 @@ data Tm_
   | Let  x :: {Var}  t1 :: Tm  t2 :: Tm
   | Prim fn :: String args :: TmL
   | If cond :: Tm t1 :: Tm t2 :: Tm -- if cond then t1 else t2
+    -- a case statement consists of the scrutinee and an exhaustive
+    -- list of alternatives ascendingly ordered by tag.
   | Case scrut :: Tm alts :: AltL
 
 type AltL = [Alt]
 
 data Alt
+  -- An alternatives consist of the constructor it matches, and a 
+  -- number of variables that are bound to the constructor fields.
+  -- Nested patterns are not supported.
   | Alt con :: Name vars :: {[Name]} tm :: Tm
 
 deriving Tm Tm_ Alt : Show
