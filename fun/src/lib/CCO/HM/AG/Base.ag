@@ -44,8 +44,14 @@ data Tm_
   | Let  x :: {Var}  t1 :: Tm  t2 :: Tm
   | Prim fn :: String args :: TmL
   | If cond :: Tm t1 :: Tm t2 :: Tm -- if cond then t1 else t2
+  | Case scrut :: Tm alts :: AltL
 
-deriving Tm Tm_ : Show
+type AltL = [Alt]
+
+data Alt
+  | Alt con :: Name vars :: {[Name]} tm :: Tm
+
+deriving Tm Tm_ Alt : Show
 
 
 {

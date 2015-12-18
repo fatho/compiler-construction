@@ -1,0 +1,25 @@
+data Bool = False | True
+data List = Nil | Cons(2)
+
+let eq    = \ x . \ y . prim "primEqInt" x y in
+let add   = \ x . \ y . prim "primAddInt" x y in
+let sub   = \ x . \ y . prim "primSubInt" x y in
+let ones  = Cons 1 ones in
+let take  = 
+  \n . \xs .
+    case eq n 0 of
+      True = Nil;
+      False = 
+        case xs of
+          Nil = Nil;
+          Cons h t = Cons h (take (sub n 1) t)
+        esac
+    esac
+  in
+let sum = \xs . case xs of
+                  Nil = 0;
+                  Cons h t = add h (sum t)
+                esac
+            in
+sum (take 5 ones)
+ni ni ni ni ni ni

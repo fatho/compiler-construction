@@ -1,5 +1,7 @@
-let plus = \x . \y . prim "primAddInt" x y in
-let fv = 5 in
-let id = \x.x
-in (id (id id)) (plus (id fv) 4)
-ni ni ni
+data Bool = False | True
+data List = Nil | Cons(2)
+
+case Cons 1 Nil of
+	Nil = 0;
+	Cons h t = h
+esac

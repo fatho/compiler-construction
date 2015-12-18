@@ -39,18 +39,18 @@ type Bindings = [(String, SourcePos, Tm)]
 attr Mod
   syn anf :: Mod
 
-attr Tm Tm_ TmL
-  -- syn anf         :: Tm_
-  chn counter     :: Int 
-  -- chn aenv        :: AppEnv
-  
-  syn bindings    :: {Bindings}
+attr Tm Tm_ TmL AltL Alt
+  chn counter                :: Int 
+  syn bindings use {++} {[]} :: {Bindings}
 
 attr TmL
   syn noLetTmL    :: TmL
 
 attr Tm Tm_
   syn noLetTm     :: Tm
+
+attr AltL Alt
+  syn noLetAltL use {++} {[]} :: AltL
 
 sem Mod
   | Mod loc.mainThunkRef = toSpecialName 0
@@ -93,3 +93,15 @@ sem Tm_
         loc.anfBindArg = varOrBind @uniqueArg @lhs.pos (introduceLets @t2.noLetTm @t2.bindings)
         lhs.noLetTm  = Tm @lhs.pos $ App (fst @anfBindFun) (fst @anfBindArg)
         lhs.bindings = snd @anfBindFun ++ snd @anfBindArg
+
+  | Case  loc.uniqueScrut :: uniqueref counter
+
+          loc.anfBindScrut = varOrBind @uniqueScrut @lhs.pos (introduceLets @scrut.noLetTm @scrut.bindings)
+
+          lhs.noLetTm  = Tm @lhs.pos $ Case (fst @anfBindScrut) @alts.noLetAltL
+          lhs.bindings = snd @anfBindScrut ++ @alts.bindings
+
+sem Alt
+  | Alt loc.uniqueAlt :: uniqueref counter
+        lhs.noLetAltL = [ Alt @con @vars (introduceLets @tm.noLetTm @tm.bindings) ]
+        lhs.bindings  = []

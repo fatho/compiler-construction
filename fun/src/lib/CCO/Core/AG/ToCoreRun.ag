@@ -73,6 +73,7 @@ sem Ref
   | Glob  lhs   .   crrefl  =   [CR.mkModRef @offset]
   | Loc   lhs   .   crrefl  =   [CR.mkLocDifRef @levdiff @offset]
   | Tag   lhs   .   crrefl  =   map CRI.RRef_Tag @ref.crrefl
+  | Field lhs   .   crrefl  =   map (\b -> CRI.RRef_Fld b @idx) @ref.crrefl
 
 
 -------------------------------------------------------------------------------
@@ -118,7 +119,7 @@ sem Exp
   | Lam  lhs.stksize  = 1 --new scope / handled in the sem Exp by mkLam
   | App  lhs.stksize  = @func.stksize + length @args.crsexpl
   | Prim lhs.stksize  = length @args.crsexpl -- arguments on the stack but what about primitive function call ???? 
-  | Node lhs.stksize  = length @args.crsexpl
+  | Node lhs.stksize  = 1 + length @args.crsexpl -- arguments on the stack + the node
   | Case lhs.stksize  = @alts.stksize
   | Let  lhs.stksize  = @bind.stksize + @body.stksize
   | Dbg  lhs.stksize  = 0

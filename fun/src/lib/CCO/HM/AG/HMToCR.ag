@@ -5,6 +5,7 @@ imports
 {
 import qualified CCO.Core.AG as CR
 import qualified Data.Map as Map
+import Data.Maybe (fromMaybe)
 import qualified Data.Set as Set
 import Debug.Trace
 }
@@ -16,12 +17,14 @@ import Debug.Trace
 data DeclRef
   = DeclLoc { declLocLevel :: Int, declLocOffset :: Int}
   | DeclGlob { declGlobOffset :: Int }
-  | DeclTag { declRef :: DeclRef }
+  | DeclField { declFieldBase :: DeclRef, declFieldIdx :: Int }
   deriving (Eq, Ord, Show, Read)
 
 type Environment = Map.Map String DeclRef
 
 type GlobalBinds = Map.Map Int CR.Exp
+
+type TagMap = Map.Map String Int
 }
 
 attr Mod
@@ -40,27 +43,28 @@ sem Mod
         tm.env          = @dataTypes.env
         tm.offset       = 0
         tm.forceEval    = True
+        tm.conTags      = @dataTypes.conTags
 
 -- TODO: for error messages add SourcePos for datatypes and constructors in Pos.AG 
 --       add debug information, the corerun starts to be a bit unclear with the allocs without the appropriate constructor in comments..
 
 attr DataTyL DataTy DataTy_
-  chn globalOffset                              :: Int
   -- for storing all the names of the datatypes and checking if they are unique
   chn names                                     :: {Set.Set Name}
   -- a mapping of all constructors to global bindings
-  chn env                                       :: {Environment}
-  syn globalBinds use {`Map.union`} {Map.empty} :: {GlobalBinds}
   syn metal       use {++}          {[]}        :: {CR.MetaL}  
 
 attr DataConL DataCon DataCon_
-  chn globalOffset                              :: Int
   -- a mapping of all constructors to global bindings
-  chn env                                       :: {Environment}
   inh conIndex                                  :: Int
-  syn globalBinds use {`Map.union`} {Map.empty} :: {GlobalBinds}
   syn metaConl    use {++}          {[]}        :: {CR.MetaDataConL}  
-  
+
+attr DataConL DataCon DataCon_ DataTyL DataTy DataTy_
+  chn globalOffset                              :: Int
+  syn conTags use {Map.union} {Map.empty} :: TagMap
+  syn globalBinds use {`Map.union`} {Map.empty} :: {GlobalBinds}
+  chn env                                       :: {Environment}
+
 sem DataTy_
   | DataTy_ loc   . uniqueDataTy = uniqueDataType @name @lhs.names
             lhs   . names        = Set.insert @name @lhs.names
@@ -72,24 +76,19 @@ sem DataConL
          tl . globalOffset = @lhs.globalOffset + 1
 
 sem DataCon_
-  | DataCon_ loc . argRefs     = map (CR.Loc 0) [0 .. @arity - 1]
-             loc . varRefs     = map CR.Var     @argRefs
-             loc . node        = 
-                if @arity == 0
-                    then CR.Node @lhs.conIndex []
-                    else CR.Node @lhs.conIndex @varRefs
-             lhs . globalBinds = 
-                if @arity == 0 
-                    then Map.insert @lhs.globalOffset @node                   Map.empty
-                    else Map.insert @lhs.globalOffset (CR.Lam @argRefs @node) Map.empty
+  | DataCon_ loc . nodeArgs    = [ CR.Var $ CR.Loc (2 * i + 1) 0 | i <- [@arity - 1, @arity - 2 .. 0] ]
+             loc . node        = mkThunk $ iterateFun @arity (CR.Lam [CR.Loc 0 0] . mkThunk)
+                                                             (CR.Node @lhs.conIndex @nodeArgs)
+             lhs . globalBinds = Map.insert @lhs.globalOffset @node Map.empty
              loc . uniqueCon   = uniqueConstructor @name @lhs.env
-             lhs . env         = Map.insert @uniqueCon (DeclTag $ DeclGlob @lhs.globalOffset) @lhs.env
+             lhs . env         = Map.insert @uniqueCon (DeclGlob @lhs.globalOffset) @lhs.env
              lhs . metaConl    = [ CR.MetaDataCon @name @lhs.conIndex ]
+             lhs . conTags     = Map.singleton @name @lhs.conIndex
 
 attr Tm Tm_
   syn exp                  :: {CR.Exp}
 
-attr Tm Tm_ TmL
+attr Tm Tm_ TmL Alt AltL
   -- a mapping of all variables in scope
   inh env                  :: {Environment}
   -- the absolute lexical level (counted from the top, first level is 0)
@@ -103,11 +102,16 @@ attr Tm Tm_ TmL
   -- local stack offset
   inh offset               :: {Int}
   inh forceEval            :: {Bool}
+  inh conTags              :: TagMap
   --syn offset               :: {Int}
   -- the generated expression
 
 attr TmL
   syn expL use {++} {[]}   :: {[CR.Exp]}
+
+attr Alt AltL
+  syn altMap use {Map.union} {Map.empty} :: {Map.Map Int CR.Exp}
+  inh scrutRef :: {DeclRef}
 
 sem TmL
   | Cons lhs.expL = @hd.exp : @tl.expL
@@ -116,7 +120,8 @@ sem Tm_
   | Nat lhs.exp    = CR.SExp (CR.Int @i)
         --lhs.offset = @lhs.offset + 1
 
-  | Var lhs.exp    = optForceEval @lhs.forceEval $ CR.SExp (CR.Var (varToRef @lhs.pos @lhs.level @lhs.env @x))
+  | Var lhs.exp    = optForceEval @lhs.forceEval $ 
+                      CR.SExp (CR.Var (varToRef @lhs.pos @lhs.level @lhs.env @x))
         --lhs.offset = @lhs.offset + 1
 
   | Lam lhs.exp    = CR.Lam [CR.Loc 0 0] $ mkThunk @t1.exp
@@ -189,6 +194,24 @@ sem Tm_
         t1.globalScope   = False
         t2.globalScope   = False
         cond.globalScope = False
+   | Case
+        loc.thunkValRef = CR.Loc 0 @lhs.offset
+        lhs.exp    = CR.Let (CR.Bind @thunkValRef (CR.Eval @scrut.exp)) $
+                        CR.Case (CR.Var $ CR.Tag @thunkValRef) (Map.elems $ @alts.altMap)
+        --lhs.offset = @lhs.offset + 1
+        scrut.forceEval = False
+        --t1.level   = @lhs.level + 1
+        alts.offset  = @lhs.offset + 1
+        alts.globalScope   = False
+        alts.scrutRef = DeclLoc @lhs.level @lhs.offset
+        scrut.globalScope = False
+
+sem Alt
+  | Alt lhs.altMap  = Map.singleton (lookupConTag @con @lhs.conTags) @tm.exp
+        loc.arity   = length @vars
+        loc.argRefs = map (DeclField @lhs.scrutRef) [0 .. @arity - 1]
+        loc.argEnv  = Map.fromList $ zip @vars @argRefs
+        tm.env      = Map.union @lhs.env @loc.argEnv
 
 {
 expToSExp :: CR.Exp -> CR.SExp
@@ -197,13 +220,13 @@ expToSExp _            = error "Exp not a SExp"
 
 varToRef :: SourcePos -> Int -> Environment -> Var -> CR.Ref
 varToRef pos currentLevel env x = case Map.lookup x env of
-    Just (DeclLoc bindLevel offset) -> CR.Loc (currentLevel - bindLevel) offset
-    Just (DeclGlob offset)          -> CR.Glob offset
-    Just (DeclTag ref)              -> CR.Tag $ case ref of 
-                                                  DeclLoc _ _      -> error "Local declaration of constructor"
-                                                  DeclGlob offset  -> CR.Glob offset
-                                                  DeclTag _        -> error "Tag within a tag"
+    Just ref -> convertRef ref
     Nothing -> error $ "Variable " ++ x ++ " not found (" ++ describeSourcePos pos ++ ")"
+  where
+    convertRef r = case r of
+      DeclLoc bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
+      DeclGlob offset          -> CR.Glob offset
+      DeclField base idx       -> CR.Field (convertRef base) idx
 
 mkThunk :: CR.Exp -> CR.Exp
 mkThunk = CR.Lam []
@@ -224,4 +247,12 @@ uniqueConstructor :: Name -> Environment -> Name
 uniqueConstructor name env = case Map.member name env of
     True  -> error $ "Data Constructor \"" ++ name ++ "\" is not unique"
     False -> name
+
+lookupConTag :: Name -> TagMap -> Int
+lookupConTag name = fromMaybe err . Map.lookup name where
+  err = error $ "Constructor '" ++ name ++ " not found." 
+
+iterateFun :: Int -> (a -> a) -> a -> a
+iterateFun n f x | n <= 0    = x
+                 | otherwise = iterateFun (n-1) f (f x) 
 }

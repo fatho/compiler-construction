@@ -22,6 +22,7 @@ module CCO.HM.Base (
   , DataTy_ (..)
   , DataCon (..)
   , DataCon_ (..)
+  , Alt (..)
 ) where
 
 import CCO.HM.AG
@@ -58,6 +59,10 @@ instance Tree Tm where
   fromTree (Tm pos t) = T.App "Tm" [fromTree pos, fromTree t]
   toTree = parseTree [app "Tm" (Tm <$> arg <*> arg)]
 
+instance Tree Alt where
+  fromTree (Alt con vars tm) = T.App "Alt" [fromTree con, fromTree vars, fromTree tm]
+  toTree = parseTree [app "Alt" (Alt <$> arg <*> arg <*> arg)]
+
 instance Tree Tm_ where
   fromTree (Nat x)       = T.App "Nat" [fromTree x]
   fromTree (Var x)       = T.App "Var" [fromTree x]
@@ -67,6 +72,7 @@ instance Tree Tm_ where
   fromTree (Prim fn as)  = T.App "Prim" [fromTree fn, fromTree as]
   --fromTree (Prim fn)     = T.App "Prim" [fromTree fn]
   fromTree (If c t1 t2)  = T.App "If" [fromTree c, fromTree t1, fromTree t2]
+  fromTree (Case s a)  = T.App "Case" [fromTree s, fromTree a]
 
   toTree = parseTree [ app "Nat" (Nat <$> arg                )
                      , app "Var" (Var <$> arg                )
@@ -76,4 +82,5 @@ instance Tree Tm_ where
                      , app "Prim" (Prim <$> arg <*> arg      )
                      --, app "Prim" (Prim <$> arg              )
                      , app "If" (If <$> arg <*> arg <*> arg)
+                     , app "Case" (Case <$> arg <*> arg)
                      ]

@@ -29,6 +29,7 @@ data Ref
   | Loc  levdiff    :: {Int}
          offset     :: {Int}
   | Tag  ref        :: Ref
+  | Field ref :: Ref idx :: Int
 
 type RefL = [Ref]
 
@@ -62,3 +63,5 @@ data Bind
          xexp :: Exp
 
 type BindL = [Bind]
+
+deriving Exp SExp Bind Ref Meta MetaDataCon Mod : Show

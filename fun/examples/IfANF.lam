@@ -2,7 +2,7 @@ let id = \x . x in
 let x = let anf_a = 0 in
         let anf_b = 2 in
         let anf_c = 3 in
-        if (id id) ((id id) (id anf_a)) then anf_b else anf_c fi
+        anf_b
         ni ni ni in
 let anf_d = 2 in
 prim "primAddInt" x anf_d

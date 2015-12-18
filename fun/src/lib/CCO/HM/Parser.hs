@@ -75,11 +75,11 @@ pApp :: TokenParser Tm
 pApp = (\pos ts -> foldl1 (\t1 t2 -> Tm pos (App t1 t2)) ts) 
         <$> sourcePos 
         <*> some
-          (  -- pPrim <|>
-             pLet <|>
-             pIf  <|>
-             pNat <|>
-             pVar <|>
+          (  pLet  <|>
+             pIf   <|>
+             pCase <|>
+             pNat  <|>
+             pVar  <|>
              pPar
           )
 
@@ -133,3 +133,16 @@ pIf = (\pos cond t1 t2 -> Tm pos (If cond t1 t2))
   <*  keyword "else"
   <*> pTm
   <*  keyword "fi"
+
+
+pCase :: TokenParser Tm
+pCase = (\pos scrut alts -> Tm pos (Case scrut alts))
+  <$> sourcePos
+  <*  keyword "case"
+  <*> pTm
+  <*  keyword "of"
+  <*> someSepBy (spec ';') pAlt
+  <*  keyword "esac"
+  
+pAlt :: TokenParser Alt
+pAlt = Alt <$> var <*> many var <* spec '=' <*> pTm
