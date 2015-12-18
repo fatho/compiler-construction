@@ -83,7 +83,7 @@ sem DataCon_
                     then Map.insert @lhs.globalOffset @node                   Map.empty
                     else Map.insert @lhs.globalOffset (CR.Lam @argRefs @node) Map.empty
              loc . uniqueCon   = uniqueConstructor @name @lhs.env
-             lhs . env         = Map.insert @uniqueCon (DeclGlob @lhs.globalOffset) @lhs.env
+             lhs . env         = Map.insert @uniqueCon (DeclTag $ DeclGlob @lhs.globalOffset) @lhs.env
              lhs . metaConl    = [ CR.MetaDataCon @name @lhs.conIndex ]
 
 attr Tm Tm_
@@ -198,7 +198,11 @@ expToSExp _            = error "Exp not a SExp"
 varToRef :: SourcePos -> Int -> Environment -> Var -> CR.Ref
 varToRef pos currentLevel env x = case Map.lookup x env of
     Just (DeclLoc bindLevel offset) -> CR.Loc (currentLevel - bindLevel) offset
-    Just (DeclGlob offset) -> CR.Glob offset
+    Just (DeclGlob offset)          -> CR.Glob offset
+    Just (DeclTag ref)              -> CR.Tag $ case ref of 
+                                                  DeclLoc _ _      -> error "Local declaration of constructor"
+                                                  DeclGlob offset  -> CR.Glob offset
+                                                  DeclTag _        -> error "Tag within a tag"
     Nothing -> error $ "Variable " ++ x ++ " not found (" ++ describeSourcePos pos ++ ")"
 
 mkThunk :: CR.Exp -> CR.Exp
