@@ -110,12 +110,8 @@ sem Tm_
         lhs.bindings = snd @anfBindCond
   -- We rely on the semantics for 'TmL' (list of terms) to give us a list of variables instead
   -- and the corresponding bindings for the arguments of the primitive operation.
-  -- We also bind the primitive call itself to a fresh variable in order to make it lazy.
-  -- (In the next stage, each let binding also introduces a thunk).
-  | Prim  loc.unique :: uniqueref counter
-          loc.anfRef   = toSpecialName @unique
-          lhs.noLetTm  = Tm @lhs.pos $ Var @anfRef
-          lhs.bindings = @args.bindings ++ [(@anfRef, @lhs.pos, Tm @lhs.pos $ Prim @fn @args.noLetTmL)]
+  | Prim  lhs.noLetTm  = Tm @lhs.pos $ Prim @fn @args.noLetTmL
+          lhs.bindings = @args.bindings
   -- Variables and naturals are left unchanged.
   | Var Nat lhs.noLetTm = Tm @lhs.pos @self
             lhs.bindings = []

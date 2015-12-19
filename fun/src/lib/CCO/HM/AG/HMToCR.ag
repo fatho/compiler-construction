@@ -180,7 +180,9 @@ sem Tm_
           -- all arguments need to be evaluated
           args.laziness = Strict
           -- generate bindings for evaluated arguments 
-          lhs.exp = foldr (\(sl,arg) -> CR.Let (CR.Bind (CR.Loc 0 sl) arg)) (CR.Prim @fn @argRefs) @argSlots
+          lhs.exp = foldr (\(sl,arg) -> CR.Let (CR.Bind (CR.Loc 0 sl) arg))
+                          (thunkIfRequired @lhs.laziness $ CR.Prim @fn @argRefs)
+                          @argSlots
 
   | App lhs.exp   = evalIfRequired @lhs.laziness $ CR.App @t1.exp [expToSExp @t2.exp]
         -- we can't have let expressions nested in other expressions (since let never returns),
