@@ -29,11 +29,16 @@ let take  =
         esac
     esac
   in
+let append = \xs . \ys . 
+  case xs of
+    Nil = ys;
+    Cons h t = Cons h (append t ys)
+  esac in
 let iterate = \f . let go = \x . Cons x (go (f x)) in go ni in
 let replicate = \n . \x . if eq n 0 then Nil else Cons x (replicate (sub n 1) x) fi in
 let repeat = \x . let xs = Cons x xs in xs ni in
 let sum = foldl add 0 in
 let ones  = repeat 1 in
 let nats  = iterate (add 1) 1 in
-sum (take 10 nats)
-ni ni ni ni ni ni ni ni ni ni ni ni
+sum (append (take 10 nats) (take 5 ones))
+ni ni ni ni ni ni ni ni ni ni ni ni ni

@@ -11,38 +11,57 @@ import Debug.Trace
 }
 
 {
--- | An absolute reference to a variable declaration. In contrast to 'CR.Ref',
--- @DeclLoc@ takes the absolute lexical level counted from the root instead of
--- an relative level counted from the current one.
+-- | Similar to 'CR.Ref', but provides absolute level references instead of
+-- difference based references. 
 data DeclRef
-  = DeclLoc { declLocLevel :: Int, declLocOffset :: Int}
+  = DeclLocAbs { declLocAbsLevel :: Int, declLocAbsOffset :: Int}
+  -- ^ An absolute reference to a variable declaration. In contrast to 'CR.Loc',
+  -- @DeclLocAbs@ takes the absolute lexical level counted from the root instead of
+  -- an relative level counted from the current one.
   | DeclGlob { declGlobOffset :: Int }
+  -- ^ A global reference, equivalent to 'CR.Glob'
   | DeclField { declFieldBase :: DeclRef, declFieldIdx :: Int }
+  -- ^ A reference to a field of a memory node, equivalent to 'CR.Field'
   deriving (Eq, Ord, Show, Read)
 
+-- | The variable environment, mapping identifiers to a low-level reference to the value.
 type Environment = Map.Map String DeclRef
 
+-- | The mapping of gobal bindings (index to expression).
 type GlobalBinds = Map.Map Int CR.Exp
 
+-- | The mapping of constructor names to their corresponding tags.
 type TagMap = Map.Map String Int
+
+-- | Tag for the runtime behavior (Lazy vs strict)
+data Laziness = Lazy | Strict
+
 }
 
 attr Mod
   syn mod                  :: {CR.Mod}
 
 sem Mod
-  | Mod loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ Map.toAscList (@dataTypes.globalBinds `Map.union` @tm.globalBinds)
+  -- The global bindings in a module consist of all data constructors (@dataTypes.globalBinds)
+  -- and the top level let expressions (@tm.globalBinds)
+  | Mod loc.modBinds = map (\(o,e) -> CR.Bind (CR.Glob o) e) $ 
+                          Map.toAscList (@dataTypes.globalBinds `Map.union` @tm.globalBinds)
         lhs.mod      = CR.Mod @tm.exp @dataTypes.metal @loc.modBinds
-        -- pass inherited attributes
+        -- constructors types come first in the list of bindings
         dataTypes.globalOffset = 0
+        -- the environment and  names of data types are chained through the data declarations
+        -- in order to check for duplicates. 
         dataTypes.env          = Map.empty
         dataTypes.names        = Set.empty
+        -- we start in the root level
         tm.level        = 0
         tm.globalScope  = True
+        -- next free global binding after data declarations
         tm.globalOffset = length @dataTypes.globalBinds
         tm.env          = @dataTypes.env
         tm.offset       = 0
-        tm.forceEval    = True
+        -- we need the main expression to be evaluated.
+        tm.laziness    = Strict
         tm.conTags      = @dataTypes.conTags
 
 -- TODO: for error messages add SourcePos for datatypes and constructors in Pos.AG 
@@ -55,24 +74,30 @@ attr DataTyL DataTy DataTy_
   syn metal       use {++}          {[]}        :: {CR.MetaL}  
 
 attr DataConL DataCon DataCon_
-  -- a mapping of all constructors to global bindings
+  -- the index of a data constructor in its declaration, used as tag
   inh conIndex                                  :: Int
+  -- meta data about the constructors in a declaration
   syn metaConl    use {++}          {[]}        :: {CR.MetaDataConL}  
 
 attr DataConL DataCon DataCon_ DataTyL DataTy DataTy_
+  -- next free slot in the global bindings
   chn globalOffset                              :: Int
   -- a map from the constructor names to their assigned tags
   syn conTags use {Map.union} {Map.empty}       :: TagMap
+  -- global bindings introduced for the constructors
   syn globalBinds use {`Map.union`} {Map.empty} :: {GlobalBinds}
+  -- environment of variables/constructors in scope
   chn env                                       :: {Environment}
 
 sem DataTy_
+  -- checks whether the data type name is unique, and synthesizes meta information
   | DataTy_ loc   . uniqueDataTy = uniqueDataType @name @lhs.names
             lhs   . names        = Set.insert @name @lhs.names
             lhs   . metal        = [ CR.MetaDataType @uniqueDataTy @dcons.metaConl ]
             dcons . conIndex     = 0
 
 sem DataConL
+  -- increase bindings indices as we walk through the list of data constructors
   | Cons tl . conIndex     = @lhs.conIndex     + 1
          tl . globalOffset = @lhs.globalOffset + 1
 
@@ -96,121 +121,144 @@ attr Tm Tm_
 attr Tm Tm_ TmL Alt AltL
   -- a mapping of all variables in scope
   inh env                  :: {Environment}
-  -- the absolute lexical level (counted from the top, first level is 0)
-  -- we are currently in.
+  -- the absolute lexical level we are currently at (counted from the top, first level is 0).
   inh level                :: {Int}
-  -- let bindings at the root of the AST are translated to global bindings
-  -- and handled by HMToCR
+  -- If globalScope is set, let bindings are translated to global bindings and handled by HMToCR
+  -- This is set to true by the Mod semantics and reset to False as soon as an AST node introduces
+  -- a local scope.
   inh globalScope          :: Bool
   inh globalOffset         :: Int
   syn globalBinds use {`Map.union`} {Map.empty} :: GlobalBinds
   -- local stack offset
   inh offset               :: {Int}
-  inh forceEval            :: {Bool}
+  -- 'laziness' tells the child nodes whether their ancestor requires a thunk
+  -- or an evaluated value. The children can introduces "eval" expressions if necessary. 
+  inh laziness            :: {Laziness}
   -- a map from the constructor names to their assigned tags
   inh conTags              :: TagMap
 
 attr TmL
+  -- A list of terms is synthesized to a list of CoreRun expressions
   syn expL use {++} {[]}   :: {[CR.Exp]}
 
 attr Alt AltL
+  -- maps a constructor tag to the corresponding case alternative
   syn altMap use {Map.union} {Map.empty} :: {Map.Map Int CR.Exp}
+  -- the reference to the scrutinee in the enclosing case expression
   inh scrutRef :: {DeclRef}
 
 sem TmL
+  -- just gathering the expressions in the list.
   | Cons lhs.expL = @hd.exp : @tl.expL
 
 sem Tm_
-  | Nat lhs.exp    = CR.SExp (CR.Int @i)
-        --lhs.offset = @lhs.offset + 1
-
-  | Var lhs.exp    = optForceEval @lhs.forceEval $ 
+  -- Natural number, if required, it's made into a thunk, otherwise, its left strict.
+  | Nat lhs.exp    = thunkIfRequired @lhs.laziness $ CR.SExp (CR.Int @i)
+  
+  -- If a strict value is needed, the variable is also evaluated
+  | Var lhs.exp    = evalIfRequired @lhs.laziness $ 
                       CR.SExp (CR.Var (varToRef @lhs.pos @lhs.level @lhs.env @x))
-        --lhs.offset = @lhs.offset + 1
 
+  -- A lambda in the source language has always just one argument.
+  -- By convention, all arguments require a thunk, and the return value is again a thunk.
   | Lam lhs.exp    = CR.Lam [CR.Loc 0 0] $ mkThunk @t1.exp
-        loc.ref    = DeclLoc (@lhs.level + 1) 0
+        -- reference to the lambda argument (note that its defined one level below)
+        loc.ref    = DeclLocAbs (@lhs.level + 1) 0
         t1.env     = Map.insert @x @ref @lhs.env
+        -- the actual expression lies two levels below, since we also have a thunk in between
         t1.level   = @lhs.level + 2
-        t1.offset  = 0
+        t1.offset  = 0 -- new stack
         t1.globalScope = False
-        t1.forceEval = True
-        
+         -- since we now have an explicit thunk, the expression inside the thunk should be strict
+        t1.laziness = Strict
+  
+  -- reserves stack space for each argument of the prim, where the arguments are then evaluated
   | Prim  loc.arity = length @args.expL
           loc.slots = [@lhs.offset .. @lhs.offset + @arity - 1]
           loc.argSlots = zip @slots @args.expL
           loc.argRefs  = map (CR.Var . CR.Loc 0) @slots
-          args.forceEval = True
+          -- all arguments need to be evaluated
+          args.laziness = Strict
+          -- generate bindings for evaluated arguments 
           lhs.exp = foldr (\(sl,arg) -> CR.Let (CR.Bind (CR.Loc 0 sl) arg)) (CR.Prim @fn @argRefs) @argSlots
 
-  | App lhs.exp   = optForceEval @lhs.forceEval $ CR.App @t1.exp [expToSExp @t2.exp]
-        t1.offset = notRequired $ @lhs.offset -- always takes one argument
-        t2.offset = notRequired $ @lhs.offset
-        t1.forceEval = True
-        t2.forceEval = False
+  | App lhs.exp   = evalIfRequired @lhs.laziness $ CR.App @t1.exp [expToSExp @t2.exp]
+        -- we can't have let expressions nested in other expressions (since let never returns),
+        -- thus, the offsets are not needed here. 
+        t1.offset = notRequired
+        t2.offset = notRequired
+        -- the function needs to be evaluated before calling, the argument has to be lazy 
+        t1.laziness = Strict
+        t2.laziness = Lazy
        
-  | Let loc.isGlobal = @lhs.globalScope -- are we in global scope? TODO: Better way of determining this
-        -- make a thunk
+  | Let -- make a thunk
         loc.thunk  = mkThunk @t1.exp
-        t1.forceEval = True
+        t1.laziness = Strict
         t1.level   = @lhs.level + 1
         t1.offset  = 0
         -- create binding
         lhs.exp    =
-          if @loc.isGlobal
+          if @lhs.globalScope
               -- binding is lifted to global scope
               then @t2.exp
               -- local binding on the stack (in current level)
               else CR.Let (CR.Bind (CR.Loc 0 @lhs.offset) @thunk) @t2.exp
         -- next free slot for a global binding
-        t2.globalOffset = if @loc.isGlobal 
+        t2.globalOffset = if @lhs.globalScope 
                             then @lhs.globalOffset + 1 
                             else @lhs.globalOffset
         -- create ref depending on where expression is bound
         loc.ref    =
-          if @loc.isGlobal
+          if @lhs.globalScope
             then DeclGlob @lhs.globalOffset
-            else DeclLoc @lhs.level @lhs.offset
+            else DeclLocAbs @lhs.level @lhs.offset
         -- possibly update global bindings
         lhs.globalBinds =
-          if @loc.isGlobal
+          if @lhs.globalScope
             then Map.insert @lhs.globalOffset @thunk @t2.globalBinds
             else @t2.globalBinds
-        -- provide binding to body and the bound expression (to allow recursion)
+        -- provide binding to body and the bound expression itself (to allow recursion)
         loc.newEnv = Map.insert @x @ref @lhs.env
         t1.env     = @loc.newEnv
         t2.env     = @loc.newEnv
         -- thread offset through computation
-        t2.offset  = if @loc.isGlobal 
+        t2.offset  = if @lhs.globalScope 
                             then @lhs.offset
+                            -- only if we allocate locally the offset increases
                             else @lhs.offset + 1
-        --lhs.offset = @t2.offset
+        -- the bound value is not in global scope anymore
         t1.globalScope = False
-        
+
+   -- Evaluates the condition in an auxilliary binding on the stack and branches accordingly         
    | If loc.thunkValRef = CR.Loc 0 @lhs.offset
-        lhs.exp    = CR.Let (CR.Bind @thunkValRef (CR.Eval @cond.exp)) $
+        lhs.exp    = CR.Let (CR.Bind @thunkValRef @cond.exp) $
                         CR.Case (CR.Var $ CR.Tag @thunkValRef) [@t2.exp, @t1.exp]
-        --lhs.offset = @lhs.offset + 1
-        cond.forceEval = False
-        --t1.level   = @lhs.level + 1
-        t1.offset  = notRequired $ @lhs.offset + 1
-        t2.offset  = notRequired $ @lhs.offset + 1
+        cond.laziness = Strict
+        -- we introduced one binding, and only one of the alternatives will be executed,
+        -- thus they both have the same stack offset.
+        t1.offset  = @lhs.offset + 1
+        t2.offset  = @lhs.offset + 1
+        -- we leave global scope inside the if expression
         t1.globalScope   = False
         t2.globalScope   = False
         cond.globalScope = False
+        
+   -- Evaluates the scrutinee in an auxilliary binding on the stack and branches accordingly.
+   -- It is required that the case expression has *exactly* one alternative for each alternative. 
    | Case
         -- evaluate the scrutinee in a local binding
         loc.thunkValRef = CR.Loc 0 @lhs.offset
         -- the alternatives are added in ascending order by tag (using 'Map.elems')
-        lhs.exp    = CR.Let (CR.Bind @thunkValRef (CR.Eval @scrut.exp)) $
+        lhs.exp    = CR.Let (CR.Bind @thunkValRef @scrut.exp) $
                         CR.Case (CR.Var $ CR.Tag @thunkValRef) (Map.elems $ @alts.altMap)
-        scrut.forceEval = False
-        -- we bound the scrutinee, so + 1
+        scrut.laziness = Strict
+        -- we have bound the scrutinee, so the offset is increased by one
         -- not that all alternatives share the same offset, 
         -- because only one of them will eventually be executed
         alts.offset  = @lhs.offset + 1
         alts.globalScope   = False
-        alts.scrutRef = DeclLoc @lhs.level @lhs.offset
+        -- reference to the scrutinee, needed to bind the constructor arguments in alternatives
+        alts.scrutRef = DeclLocAbs @lhs.level @lhs.offset
         scrut.globalScope = False
 
 sem Alt
@@ -225,35 +273,53 @@ sem Alt
         tm.env      = Map.union @lhs.env @loc.argEnv
 
 {
+-- | Helper function to extract a simple expression from an 'CR.Exp'.
+-- Since we only synthesize 'CR.Exp', even when 'CR.SExp' would be
+-- enough, this function is needed in some non terminal, but won't fail
+-- as long as the input is valid.
 expToSExp :: CR.Exp -> CR.SExp
 expToSExp (CR.SExp se) = se
 expToSExp _            = error "Exp not a SExp"
 
+-- | @varToRef pos curLev env var@ extracts a variable @var@ from the environment @env@
+--  and converts any absolute references to a relative 'CR.Ref', given the current level
+-- @curLev@. The source position @pos@ is only needed for the error message.
 varToRef :: SourcePos -> Int -> Environment -> Var -> CR.Ref
 varToRef pos currentLevel env x = case Map.lookup x env of
     Just ref -> convertRef ref
     Nothing -> error $ "Variable " ++ x ++ " not found (" ++ describeSourcePos pos ++ ")"
   where
     convertRef r = case r of
-      DeclLoc bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
+      DeclLocAbs bindLevel offset -> CR.Loc (currentLevel - bindLevel) offset
       DeclGlob offset          -> CR.Glob offset
       DeclField base idx       -> CR.Field (convertRef base) idx
 
+-- | Introduces a thunk (i.e. a lambda expression without arguments). 
 mkThunk :: CR.Exp -> CR.Exp
 mkThunk = CR.Lam []
 
-optForceEval :: Bool -> CR.Exp -> CR.Exp
-optForceEval True x = CR.Eval x
-optForceEval False x = x
+-- | Inserts an evaluate call if a strict value is required.
+evalIfRequired :: Laziness -> CR.Exp -> CR.Exp
+evalIfRequired Strict = CR.Eval
+evalIfRequired Lazy   = id
 
-notRequired :: a -> b
-notRequired _ = error "has the program been passed to 'hm-to-anf'?"
+-- | Inserts a thunk if a lazy value is required.
+thunkIfRequired :: Laziness -> CR.Exp -> CR.Exp
+thunkIfRequired Strict = id
+thunkIfRequired Lazy   = mkThunk
 
+-- | Indicates that an inherited attribute is not needed at a certain point
+-- in the AG. This is safe, as long as the input program comes from hm-to-anf. 
+notRequired :: a
+notRequired = error "has the program been passed to 'hm-to-anf'?"
+
+-- | Checks whether a data type name is unique under those seen so far.
 uniqueDataType :: Name -> Set.Set Name -> Name
 uniqueDataType name names = case Set.member name names of
     True  -> error $ "Datatype \"" ++ name ++ "\" is not unique"
     False -> name
 
+-- | Checks whether a data constructor name is unique under those seen so far.
 uniqueConstructor :: Name -> Environment -> Name
 uniqueConstructor name env = case Map.member name env of
     True  -> error $ "Data Constructor \"" ++ name ++ "\" is not unique"

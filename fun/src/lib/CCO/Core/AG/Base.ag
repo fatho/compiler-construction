@@ -25,11 +25,12 @@ data Meta
 type MetaL = [Meta]
 
 data Ref
-  | Glob offset     :: {Int}
-  | Loc  levdiff    :: {Int}
-         offset     :: {Int}
-  | Tag  ref        :: Ref
-  | Field ref :: Ref idx :: Int
+  | Glob  offset     :: {Int}
+  | Loc   levdiff    :: {Int}
+          offset     :: {Int}
+  | Tag   ref        :: Ref
+  | Field ref        :: Ref 
+          idx        :: Int
 
 type RefL = [Ref]
 

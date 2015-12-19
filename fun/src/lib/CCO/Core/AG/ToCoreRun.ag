@@ -70,11 +70,10 @@ attr RefL Ref
   syn crrefl use {++} {[]} :: {[CR.RRef]}
 
 sem Ref
-  | Glob  lhs   .   crrefl  =   [CR.mkModRef @offset]
-  | Loc   lhs   .   crrefl  =   [CR.mkLocDifRef @levdiff @offset]
-  | Tag   lhs   .   crrefl  =   map CRI.RRef_Tag @ref.crrefl
-  | Field lhs   .   crrefl  =   map (\b -> CRI.RRef_Fld b @idx) @ref.crrefl
-
+  | Glob   lhs   .   crrefl  =   [CR.mkModRef @offset]
+  | Loc    lhs   .   crrefl  =   [CR.mkLocDifRef @levdiff @offset]
+  | Tag    lhs   .   crrefl  =   map CRI.RRef_Tag @ref.crrefl
+  | Field  lhs   .   crrefl  =   map (\b -> CRI.RRef_Fld b @idx) @ref.crrefl
 
 -------------------------------------------------------------------------------
 -- Stack offset for Let
@@ -102,8 +101,8 @@ sem Exp
 -------------------------------------------------------------------------------  
 
 attr ExpL Exp
-  syn stksize use {max} {0} :: {Int} -- TODO: Observe whether max is indeed the right thing
-  -- Reason why "max" should be right: 
+  syn stksize use {max} {0} :: {Int}
+  -- Reason why "max" instead of '+': 
   --  ExpL is only used for Case expressions, and there, only one branch is ever executed, so
   -- the stack size of the whole Case expression should be the largest stack size of one of the
   -- alternatives 

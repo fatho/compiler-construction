@@ -17,22 +17,15 @@ data "List" = "Nil" -> 0, "Cons" -> 1;
                                                          let 1 -> eval(d.2.0); in
                                                          ffi "primSubInt"(d.0.0,d.0.1); in
                                         eval(d.0.0);
-\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,5 -> let 0 -> \0,4 -> let 0 -> \0,2 -> eval(app (eval(m.4))(d.5.0)); in
-                                                         let 1 -> \0,1 -> 0; in
-                                                         eval(app (eval(d.0.0))(d.0.1)); in
-                                        let 1 -> \0,1 -> 0; in
-                                        let 2 -> \0,4 -> let 0 -> \0,2 -> eval(app (eval(m.5))(d.3.0)); in
-                                                         let 1 -> \0,3 -> let 0 -> \0,3 -> let 0 -> \0,4 -> let 0 -> \0,2 -> eval(app (eval(m.6))(d.8.0)); in
-                                                                                                            let 1 -> \0,1 -> 1; in
-                                                                                                            eval(app (eval(d.0.0))(d.0.1)); in
-                                                                                           eval(app (eval(m.7))(d.0.0)); in
-                                                                          eval(app (eval(d.0.0))(d.3.0)); in
-                                                         eval(app (eval(d.0.0))(d.0.1)); in
-                                        let 3 -> eval(d.0.0); in
-                                        case d.0.3.tag of
-                                         -> eval(d.0.2);
-                                         -> eval(d.0.1);;
-\0,3 -> let 0 -> \0,1 -> 10; in
-        eval(app (eval(m.7))(d.0.0));
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,6 -> let 0 -> \0,4 -> let 0 -> \0,1 -> 0; in
+                                                         eval(app (eval(app (eval(m.4))(d.4.0)))(d.0.0)); in
+                                        let 1 -> eval(d.0.0); in
+                                        case d.0.1.tag of
+                                         -> let 2 -> \0,4 -> let 0 -> \0,4 -> let 0 -> \0,1 -> 1; in
+                                                                              eval(app (eval(app (eval(m.6))(d.5.0)))(d.0.0)); in
+                                                             eval(app (eval(app (eval(m.7))(d.0.0)))(d.2.0)); in
+                                            eval(app (eval(app (eval(m.5))(d.1.0)))(d.0.2));
+                                         -> 0;;
 \0,1 -> 10;
-\0,2 -> eval(app (eval(m.8))(m.9));
+\0,1 -> 10;
+\0,3 -> eval(app (eval(app (eval(m.7))(m.8)))(m.9));

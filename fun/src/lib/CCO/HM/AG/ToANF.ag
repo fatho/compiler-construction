@@ -10,55 +10,77 @@ import Debug.Trace
 }
 
 {
-isANF :: Tm -> Bool
-isANF (Tm _ t) = isANF_ t
-
-isANF_ :: Tm_ -> Bool
-isANF_ (Nat _) = True
-isANF_ (Var _) = True
-isANF_ _       = False
-
+-- | Uses to generate unique identifiers in the attribute grammar
 nextUnique :: Int -> (Int, Int)
 nextUnique u = (u+1, u)
 
+-- | Generates a special variable name introduced by the transformation to ANF
+-- It contains a character that isn't available in the Frontend (the parser), to
+-- ensure that these names are indeed unique as long as the input number is unique.
 toSpecialName :: Int -> String
 toSpecialName i = "$" ++ show i
 
+-- | Reifies the list of bindings into concrete 'Let' AST terms, and
+-- uses the supplied term in the innermost position.
 introduceLets :: Tm -> Bindings -> Tm
 introduceLets = foldr (\(x, pos, tm) body -> Tm pos (Let x tm body))
 
+-- | This function makes sure, that a term is always a variable by introducing
+-- an additional binding if necessary.
+-- 
+-- @varOrBind i pos tm@ first checks whether @tm@ is already a variable. If so,
+-- it is return unchanged and an empty list of bindings is returned.
+-- If @tm@ is not a variable, a new binding will be introduced to a variable named
+-- @toSpecialName i@ and the returned term refers to that binding. 
 varOrBind :: Int -> SourcePos -> Tm -> (Tm,Bindings)
 varOrBind varId _ t@(Tm _ (Var _)) = (t, [])
 varOrBind varId bindPos t@(Tm pos t') = (Tm pos (Var name), [(name, bindPos, t)] ) where
   name = toSpecialName varId
 
+-- | The type of a list of bindings, consisting of a variable name, 
+-- a position in the original source code and the bound term.
 type Bindings = [(String, SourcePos, Tm)]
 
 }
 
 attr Mod
+  -- the synthesized module in ANF
   syn anf :: Mod
 
 attr Tm Tm_ TmL AltL Alt
+  -- the counter used for generating unique variable names
   chn counter                :: Int 
+attr Tm Tm_ TmL
+  -- the list of bindings that need to be propagated upwards during the transformation
   syn bindings use {++} {[]} :: {Bindings}
 
 attr TmL
+  -- multiple occurences of the 'noLetTm' attribute below
   syn noLetTmL    :: TmL
 
 attr Tm Tm_
+  -- A term that doesn't start with let bindings. It may still contain let bindings, just not
+  -- in the root scope. Required bindings are instead propagated upwards in the 'bindings'
+  -- attribute and reintroduced at scope delimiters like lambdas, case alternatives etc.
   syn noLetTm     :: Tm
 
 attr AltL Alt
-  syn noLetAltL use {++} {[]} :: AltL
+  -- The transformation of case alternatives.
+  syn anfAltL use {++} {[]} :: AltL
 
 sem Mod
-  | Mod loc.mainThunkRef = toSpecialName 0
+  | Mod -- we wrap the main expression in a thunk to avoid let bindings in the main expression
+        -- of a module, because those are apparently not supported by the CoreRun interpreter
+        loc.mainThunkRef = toSpecialName 0
+        -- introduce all remaining let bindings in this thunk
         loc.mainThunk = Tm @tm.pos $ Let @mainThunkRef @tm.noLetTm (Tm @tm.pos $ Var @mainThunkRef)
-        lhs.anf   = Mod @dataTypes.self (introduceLets @mainThunk @tm.bindings)
-        tm.counter = 1
+        lhs.anf       = Mod @dataTypes.self (introduceLets @mainThunk @tm.bindings)
+        -- subsequently introduced bindings start with number 1, since we already use 0 here
+        tm.counter    = 1
 
 sem TmL
+  -- here we make sure that each list item consists of a 'Var' term, by introducing
+  -- auxilliary bindings if necessary.
   | Cons  loc.unique :: uniqueref counter
           loc.anfBind  = varOrBind @unique @lhs.pos (introduceLets @hd.noLetTm @hd.bindings)
           lhs.bindings = snd @anfBind ++ @tl.bindings
@@ -67,41 +89,56 @@ sem TmL
           lhs.noLetTmL = []
 
 sem Tm_
+  -- A lambda expression serves as scope delimiter, thereby reintroducing the accumulated
+  -- let bindings directly below the lambda, propagating no further bindings upwards.
   | Lam lhs.noLetTm  = Tm @lhs.pos $ Lam @x (introduceLets @t1.noLetTm @t1.bindings)
         lhs.bindings = []
+  -- Let bindings are "destructed" and gathered in the 'bindings' attribute for later use
   | Let lhs.noLetTm  = @t2.noLetTm
         lhs.bindings = [(@x, @lhs.pos, introduceLets @t1.noLetTm @t1.bindings)] ++ @t2.bindings
+  -- The condition of the "if" has to be a simple expression, therefore we require it to be
+  -- a variable, introducing a binding if it isn't.
   | If  loc.uniqueCond :: uniqueref counter
         loc.uniqueThen :: uniqueref counter
         loc.uniqueElse :: uniqueref counter
 
         loc.anfBindCond = varOrBind @uniqueCond @lhs.pos (introduceLets @cond.noLetTm @cond.bindings)
-        loc.anfBindThen = varOrBind @uniqueThen @lhs.pos (introduceLets @t1.noLetTm @t1.bindings)
-        loc.anfBindElse = varOrBind @uniqueElse @lhs.pos (introduceLets @t2.noLetTm @t2.bindings)
+        loc.anfThen = introduceLets @t1.noLetTm @t1.bindings
+        loc.anfElse = introduceLets @t2.noLetTm @t2.bindings
 
-        lhs.noLetTm  = Tm @lhs.pos $ If (fst @anfBindCond) (fst @anfBindThen) (fst @anfBindElse)
-        lhs.bindings = snd @anfBindCond ++ snd @anfBindThen ++ snd @anfBindElse
+        lhs.noLetTm  = Tm @lhs.pos $ If (fst @anfBindCond) @anfThen @anfElse
+        lhs.bindings = snd @anfBindCond
+  -- We rely on the semantics for 'TmL' (list of terms) to give us a list of variables instead
+  -- and the corresponding bindings for the arguments of the primitive operation.
+  -- We also bind the primitive call itself to a fresh variable in order to make it lazy.
+  -- (In the next stage, each let binding also introduces a thunk).
   | Prim  loc.unique :: uniqueref counter
           loc.anfRef   = toSpecialName @unique
           lhs.noLetTm  = Tm @lhs.pos $ Var @anfRef
           lhs.bindings = @args.bindings ++ [(@anfRef, @lhs.pos, Tm @lhs.pos $ Prim @fn @args.noLetTmL)]
+  -- Variables and naturals are left unchanged.
   | Var Nat lhs.noLetTm = Tm @lhs.pos @self
             lhs.bindings = []
-  | App loc.uniqueFun :: uniqueref counter
-        loc.uniqueArg :: uniqueref counter
-        loc.anfBindFun = varOrBind @uniqueFun @lhs.pos (introduceLets @t1.noLetTm @t1.bindings)
+  -- For function applications, we require the argument to be a variable. Theoretically,
+  -- CoreRun also allows numbers as argument, but since we are now in a lazy settings,
+  -- we need to pass all arguments consistently as thunks, and thunks (even if they contain
+  -- a number) are not simple expressions.
+  -- If the argument isn't already a variable, we introduce a new one. 
+  | App loc.uniqueArg :: uniqueref counter
         loc.anfBindArg = varOrBind @uniqueArg @lhs.pos (introduceLets @t2.noLetTm @t2.bindings)
-        lhs.noLetTm  = Tm @lhs.pos $ App (fst @anfBindFun) (fst @anfBindArg)
-        lhs.bindings = snd @anfBindFun ++ snd @anfBindArg
+        lhs.noLetTm  = Tm @lhs.pos $ App @t1.noLetTm (fst @anfBindArg)
+        lhs.bindings = @t1.bindings ++ snd @anfBindArg
 
+  -- For case expressions, we handle the scrutinee similar to the condition in an if
+  -- statement (which is just a special case of "case"). Alternatives are handled below.
   | Case  loc.uniqueScrut :: uniqueref counter
           -- bind scrutinee to variable if it's not already a variable
           loc.anfBindScrut = varOrBind @uniqueScrut @lhs.pos (introduceLets @scrut.noLetTm @scrut.bindings)
-          lhs.noLetTm  = Tm @lhs.pos $ Case (fst @anfBindScrut) @alts.noLetAltL
-          lhs.bindings = snd @anfBindScrut ++ @alts.bindings
+          lhs.noLetTm  = Tm @lhs.pos $ Case (fst @anfBindScrut) @alts.anfAltL
+          lhs.bindings = snd @anfBindScrut
 
 sem Alt
-  -- alternatives introduces a new scope, where let bindings can be placed
+  -- Each case alternative introduces a new scope, where let bindings can be placed.
+  -- This means that we also do not have to propagate any bindings upwards at this point.
   | Alt loc.uniqueAlt :: uniqueref counter
-        lhs.noLetAltL = [ Alt @con @vars (introduceLets @tm.noLetTm @tm.bindings) ]
-        lhs.bindings  = []
+        lhs.anfAltL = [ Alt @con @vars (introduceLets @tm.noLetTm @tm.bindings) ]
