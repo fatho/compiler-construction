@@ -1,0 +1,8 @@
+module Main 6 -> eval(m.4);
+\0,1 -> 5;
+\0,1 -> 40;
+\0,1 -> 1010;
+\0,1 -> 20;
+\0,4 -> let 0 -> eval(m.2); in
+        let 1 -> eval(m.3); in
+        ffi "primAddInt"(d.0.0,d.0.1);

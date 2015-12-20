@@ -1,0 +1,10 @@
+module Main 5 -> eval(m.3);
+\0,5 -> let 0 -> \0,1 -> 5; in
+        let 1 -> eval(d.0.0); in
+        let 2 -> eval(d.0.0); in
+        ffi "primAddInt"(d.0.1,d.0.2);
+\0,1 -> \1,2 -> \0,1 -> eval(d.1.0);
+\0,3 -> let 0 -> \0,3 -> let 0 -> \0,2 -> eval(app (eval(m.1))(m.0)); in
+                         eval(app (eval(m.1))(d.0.0)); in
+        eval(app (eval(m.1))(d.0.0));
+\0,4 -> eval(app (eval(app (eval(app (eval(m.1))(m.1)))(m.1)))(m.2));

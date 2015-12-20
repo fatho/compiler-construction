@@ -1,7 +1,0 @@
-module id8 6 -> eval({- main -} m.2);
-export "fv" = 1;
-export "id" = 0;
-export "main" = 2;
-{- {- id -} m.0 -} \1,2 -> tail(eval(d.0.0));
-{- {- fv -} m.1 -} 5;
-{- {- main -} m.2 -} \0,2 -> tail(app (eval({- id -} m.0))({- fv -} m.1));

@@ -1,0 +1,74 @@
+module Main 20 -> eval(m.18);
+data "Bool" = "False" -> 0, "True" -> 1;
+data "List" = "Nil" -> 0, "Cons" -> 1;
+\0,1 -> alloc 0();
+\0,1 -> alloc 1();
+\0,1 -> alloc 0();
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,3 -> alloc 1(d.3.0,d.1.0);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,4 -> let 0 -> eval(d.3.0); in
+                                        let 1 -> eval(d.1.0); in
+                                        ffi "primEqInt"(d.0.0,d.0.1);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,4 -> let 0 -> eval(d.3.0); in
+                                        let 1 -> eval(d.1.0); in
+                                        ffi "primAddInt"(d.0.0,d.0.1);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,4 -> let 0 -> eval(d.3.0); in
+                                        let 1 -> eval(d.1.0); in
+                                        ffi "primSubInt"(d.0.0,d.0.1);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,2 -> let 0 -> \0,1 -> \1,2 -> \0,5 -> let 0 -> eval(d.1.0); in
+                                                                         case d.0.0.tag of
+                                                                          -> eval(d.4.0);
+                                                                          -> let 1 -> \0,2 -> eval(app (eval(d.4.0))(d.1.0.1)); in
+                                                                             eval(app (eval(app (eval(d.6.0))(d.0.0.0)))(d.0.1));; in
+                                        eval(d.0.0);
+\0,1 -> \1,2 -> \0,2 -> let 0 -> \0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,5 -> let 0 -> eval(d.1.0); in
+                                                                         case d.0.0.tag of
+                                                                          -> eval(d.3.0);
+                                                                          -> let 1 -> \0,3 -> eval(app (eval(app (eval(d.7.0))(d.4.0)))(d.1.0.0)); in
+                                                                             eval(app (eval(app (eval(d.5.0))(d.0.1)))(d.0.0.1));; in
+                        eval(d.0.0);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,7 -> let 0 -> \0,4 -> let 0 -> \0,1 -> 0; in
+                                                         eval(app (eval(app (eval(m.4))(d.4.0)))(d.0.0)); in
+                                        let 1 -> eval(d.0.0); in
+                                        case d.0.1.tag of
+                                         -> let 2 -> eval(d.1.0); in
+                                            case d.0.2.tag of
+                                             -> eval(m.2);
+                                             -> let 3 -> \0,4 -> let 0 -> \0,4 -> let 0 -> \0,1 -> 1; in
+                                                                                  eval(app (eval(app (eval(m.6))(d.5.0)))(d.0.0)); in
+                                                                 eval(app (eval(app (eval(m.9))(d.0.0)))(d.1.2.1)); in
+                                                eval(app (eval(app (eval(m.3))(d.0.2.0)))(d.0.3));;
+                                         -> eval(m.2);;
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,5 -> let 0 -> eval(d.3.0); in
+                                        case d.0.0.tag of
+                                         -> eval(d.1.0);
+                                         -> let 1 -> \0,3 -> eval(app (eval(app (eval(m.10))(d.1.0.1)))(d.2.0)); in
+                                            eval(app (eval(app (eval(m.3))(d.0.0.0)))(d.0.1));;
+\0,1 -> \1,2 -> \0,2 -> let 0 -> \0,1 -> \1,2 -> \0,4 -> let 0 -> \0,3 -> let 0 -> \0,2 -> eval(app (eval(d.6.0))(d.3.0)); in
+                                                                          eval(app (eval(d.4.0))(d.0.0)); in
+                                                         eval(app (eval(app (eval(m.3))(d.1.0)))(d.0.0)); in
+                        eval(d.0.0);
+\0,1 -> \1,2 -> \0,1 -> \1,2 -> \0,6 -> let 0 -> \0,4 -> let 0 -> \0,1 -> 0; in
+                                                         eval(app (eval(app (eval(m.4))(d.4.0)))(d.0.0)); in
+                                        let 1 -> eval(d.0.0); in
+                                        case d.0.1.tag of
+                                         -> let 2 -> \0,4 -> let 0 -> \0,4 -> let 0 -> \0,1 -> 1; in
+                                                                              eval(app (eval(app (eval(m.6))(d.5.0)))(d.0.0)); in
+                                                             eval(app (eval(app (eval(m.12))(d.0.0)))(d.2.0)); in
+                                            eval(app (eval(app (eval(m.3))(d.1.0)))(d.0.2));
+                                         -> eval(m.2);;
+\0,1 -> \1,2 -> \0,2 -> let 0 -> \0,3 -> eval(app (eval(app (eval(m.3))(d.2.0)))(d.1.0)); in
+                        eval(d.0.0);
+\0,4 -> let 0 -> \0,1 -> 0; in
+        eval(app (eval(app (eval(m.8))(m.5)))(d.0.0));
+\0,3 -> let 0 -> \0,1 -> 1; in
+        eval(app (eval(m.13))(d.0.0));
+\0,5 -> let 0 -> \0,3 -> let 0 -> \0,1 -> 1; in
+                         eval(app (eval(m.5))(d.0.0)); in
+        let 1 -> \0,1 -> 1; in
+        eval(app (eval(app (eval(m.11))(d.0.0)))(d.0.1));
+\0,5 -> let 0 -> \0,4 -> let 0 -> \0,1 -> 10; in
+                         eval(app (eval(app (eval(m.9))(d.0.0)))(m.16)); in
+        let 1 -> \0,4 -> let 0 -> \0,1 -> 5; in
+                         eval(app (eval(app (eval(m.9))(d.0.0)))(m.15)); in
+        eval(app (eval(app (eval(m.10))(d.0.0)))(d.0.1));
+\0,2 -> eval(app (eval(m.14))(m.17));

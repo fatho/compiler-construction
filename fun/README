@@ -1,8 +1,8 @@
 # Code Generation for a Lazy Functional Language
 
 Authors: 
+	- Jordy van Dortmond, 3894479
 	- Fabian Thorand, 5607000
-	- Jordy van Dortmond, 
 Date:   20 December 2015
 
 ## How to Build
@@ -73,3 +73,17 @@ in the parser for ATerms in the `uu-cco` (*not* our code) yielding to
 exponential parsing time for ATerms.
 Since time is money, we simply worked around this problem by not using the
 intermediate ATerm representation at all.
+
+## Our Examples
+
+The folder `examples/hm` contains some example HM programs that can be
+compiled using our solution. The directory `examples/cr` contains the
+corresponding translations to CoreRun.
+
+The examples demonstrate the important concepts of our implementation such as
+
+  - data declarations
+  - infinite lists using laziness
+  - pattern matching using case expressions
+  - primitive calls
+  - (mutual) recursion

@@ -179,6 +179,27 @@ sum (take 5 ones)
 ni ni ni ni ni ni ni ni
 \end{lstlisting}
 
+\section{Recursion}
+
+As evident above, our language also supports recursion, by providing the identifier bound in a let expression not only to the let body, but also to the bound expression.
+
+Mutual recursion can be done by explicitly ``binding'' the participating functions after their definitions, because variable declarations are only propagated downwards.
+
+The following example demonstrates the concept. We would like to define two mutually recursive functions \texttt{f} and \texttt{g}.
+We first define a variant \texttt{f\_explicit} of \texttt{f} which takes the functions it depends on, but which are declared later, as arguments (in this case only \texttt{g}).
+Since \texttt{g} is defined after \texttt{f\_explicit} it can directly call it, passing itself as an argument.
+If \texttt{f} is meant to be used at a later point, an additional binding can be introduced which passes \texttt{g} as first argument to \texttt{f\_explicit}.
+
+\begin{lstlisting}
+let f_explicit = \g . \x . g x in
+let g = \x . f_explicit g x in
+let f = f_explicit g in
+...
+ni ni ni
+\end{lstlisting}
+
+Note that it is intented for the sake of demonstration that \texttt{f} and \texttt{g} will never terminate, but one can easily imagine a more sensible recursion with a termination condition.
+
 \section{Attribute Grammars}
 
 \subsection{Pos.ag}

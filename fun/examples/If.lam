@@ -1,3 +1,0 @@
-let x = if 0 then 2 else 3 fi in
-prim "primAddInt" x 2
-ni
