@@ -69,11 +69,14 @@ attr AltL Alt
   syn anfAltL use {++} {[]} :: AltL
 
 sem Mod
-  | Mod -- we wrap the main expression in a thunk to avoid let bindings in the main expression
-        -- of a module, because those are apparently not supported by the CoreRun interpreter
+  | Mod -- we wrap the main expression in a thunk to avoid nested let bindings in the main expression
+        -- of a module, because those are apparently not well supported by the CoreRun interpreter
         loc.mainThunkRef = toSpecialName 0
-        -- introduce all remaining let bindings in this thunk
+        -- the additional binding is created inside of all the other let bindings
+        -- This way, these bindings will still be promoted to global definitions in the
+        -- next compilation step
         loc.mainThunk = Tm @tm.pos $ Let @mainThunkRef @tm.noLetTm (Tm @tm.pos $ Var @mainThunkRef)
+        -- introduce let bindings at global scope
         lhs.anf       = Mod @dataTypes.self (introduceLets @mainThunk @tm.bindings)
         -- subsequently introduced bindings start with number 1, since we already use 0 here
         tm.counter    = 1
@@ -99,8 +102,6 @@ sem Tm_
   -- The condition of the "if" has to be a simple expression, therefore we require it to be
   -- a variable, introducing a binding if it isn't.
   | If  loc.uniqueCond :: uniqueref counter
-        loc.uniqueThen :: uniqueref counter
-        loc.uniqueElse :: uniqueref counter
 
         loc.anfBindCond = varOrBind @uniqueCond @lhs.pos (introduceLets @cond.noLetTm @cond.bindings)
         loc.anfThen = introduceLets @t1.noLetTm @t1.bindings
