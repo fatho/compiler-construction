@@ -1,6 +1,75 @@
-Build
------
+# Code Generation for a Lazy Functional Language
 
-First invoke make to generate .hs files out of .ag files, then use cabal to build.
-This distribution is not yet using using the cabal-uuagc plugin.
+Authors: 
+	- Fabian Thorand, 5607000
+	- Jordy van Dortmond, 
+Date:   20 December 2015
 
+## How to Build
+
+We developed this solution using 7.10.2 and GHC 7.10.3.
+
+First, some platform independent preparation steps are necessary to install the required dependencies.
+All commands (unless stated otherwise) assume that the current directory is the one containing
+the `fun.cabal` file.
+
+(1) Setup sandbox (optional, but recommended) and install dependencies
+
+        $ cabal sandbox init
+        $ cabal update
+        $ cabal install --only-dependencies
+
+(2) If not yet installed, install `uuagc` either globally or in the sandbox
+
+        $ cabal install uuagc
+
+The third step requires the `make` tool, but alternatively, 
+the commands found inside the `Makefile` can also be run manually.
+
+(3) Build project
+
+  (a) If `uuagc` is compiled globally
+
+          $ make
+
+  (b) otherwise
+
+          $ cabal exec make
+
+      This will setup the `PATH` accordingly before executing `make`.
+      
+
+## Documentation
+
+Documentation of the project is available in form of comments in the Attribute 
+Grammars and the report in the `doc/report.pdf` file.
+
+The PDF documentation can be rebuilt with `pdflatex` from the source file
+`doc/report.tex`.
+
+
+## What We Have Implemented
+
+We have refactored the cabal project to wrap all functionality involving attribute
+grammars inside a library. The source code is to be found in `src/lib`.
+Each executable defined in the cabal file the references this library instead of
+compiling the same source files over and over.
+Addtionally to the executables that were originally present, we also implemented
+the following.
+
+- `hm-to-anf` which takes an ATerm representation of an HM program and returns
+  an equivalent HM program as ATerms in ANormal form.
+  
+- `hm-to-cr` takes an ATerm representation of an HM program and returns the
+  corresponding CoreRun program, again as ATerms.
+  
+- `parse-hm-to-anf-to-cr` first parses the input in concrete HM syntax, then
+  applies the transformation to ANF, then the translation to CoreRun and
+  finally pretty-prints the CoreRun program to the CoreRun syntax accepted
+  by `uhcr`.
+
+The reason of existance for the latter program is a serious performance bug
+in the parser for ATerms in the `uu-cco` (*not* our code) yielding to
+exponential parsing time for ATerms.
+Since time is money, we simply worked around this problem by not using the
+intermediate ATerm representation at all.
