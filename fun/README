@@ -44,9 +44,9 @@ the commands found inside the `Makefile` can also be run manually.
 Documentation of the project is available in form of comments in the Attribute 
 Grammars and the report in the `doc/report.pdf` file.
 
-The PDF documentation can be rebuilt with `pdflatex` from the source file
-`doc/report.tex`.
-
+The PDF documentation can be rebuilt with `make documentation` in the root directory,
+or by simply executing `make` in the `doc` directory.
+It relies on `latexmk` for building the PDF file.
 
 ## What We Have Implemented
 

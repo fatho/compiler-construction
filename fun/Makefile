@@ -21,4 +21,7 @@ clean:
 	cabal clean
 	rm -f "src/lib/CCO/HM/AG.hs" "src/lib/CCO/SystemF/AG.hs" "src/lib/CCO/Core/AG.hs"
 
-.PHONY : all haskell clean prof
+documentation :
+	$(MAKE) -C doc all
+
+.PHONY : all haskell clean prof documentation
