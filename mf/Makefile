@@ -1,6 +1,6 @@
 default: all
 
-all: src/Lexer.hs src/Parser.hs src/AttributeGrammar.hs
+all: haskell 
 
 dev: all
 	cd src && ghci Dev
@@ -25,7 +25,13 @@ src/AttributeGrammar.hs: src/AttributeGrammar.ag src/AG/Program.ag
 
 #----------------------------
 
+generate: src/AttributeGrammar.hs src/Lexer.hs src/Parser.hs
+
+# cabal build will detect changes in source files itself
+haskell: generate
+	cabal build
+
 clean:
 	rm -f src/AttributeGrammar.hs src/Parser.hs src/Lexer.hs src/*.hi src/*.o src/Main
 
-.PHONY: default all clean
+.PHONY: default all clean generate haskell
