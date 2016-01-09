@@ -26,3 +26,9 @@ fun/src/lib/CCO/SystemF/AG.hs
 fun/compile.bat
 fun/stack.yaml
 fun/mysh/
+
+# Generated Files (mf)
+
+mf/src/AttributeGrammar.hs
+mf/src/Lexer.hs
+mf/src/Parser.hs

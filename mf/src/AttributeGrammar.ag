@@ -1,0 +1,93 @@
+{
+import qualified Data.Map as M
+import qualified Data.Maybe as Maybe
+import qualified Data.List as L
+}
+
+data Program
+  | Program   procs :: Procs
+              stat  :: Stat
+  deriving Program : Show
+
+data Program'
+  | Program'  procs :: Procs'
+              stat :: Stat'
+  deriving Program' : Show
+
+data Proc
+  | Proc          name :: String  inp :: {[String]}  out :: String   stat :: Stat
+deriving Proc : Show
+
+data Proc'
+  | Proc'         labelEntry :: Int  labelReturn :: Int    name :: String  inp :: {[String]}  out :: String   stat :: Stat'
+deriving Proc' : Show
+
+data Stat
+  | Skip
+  | IfThenElse    cond  :: {BExpr}      stat1  :: Stat      stat2 :: Stat
+  | While         cond  :: {BExpr}      stat   :: Stat
+  | Call          name  :: String     params :: {Exprs}    out :: String
+  | IAssign       name  :: String     val    :: {IExpr}
+  | BAssign       name  :: String     val    :: {BExpr}
+  | Seq           stat1 :: Stat       stat2  :: Stat
+  | Malloc        name  :: String     size   :: {IExpr}
+  | Free          ptr   :: {IExpr}
+  | RefAssign     ptr   :: {IExpr}    val    :: {IExpr}
+  | Continue
+  | Break
+deriving Stat : Show
+
+data Stat'
+  | Skip'          label :: Int
+  | IfThenElse'    labelc :: Int       cond  :: BExpr      stat1  :: Stat'     stat2 :: Stat'
+  | While'         labelc :: Int       cond  :: BExpr      stat   :: Stat'
+  | Call'          labelCall :: Int  labelExit :: Int      name  :: String     params :: Exprs    out :: String
+  | IAssign'       label :: Int        name  :: String     val    :: IExpr
+  | BAssign'       label :: Int        name  :: String     val    :: BExpr
+  | Seq'           stat1 :: Stat'      stat2  :: Stat'
+  | Malloc'        label :: Int        name  :: String     size   :: IExpr
+  | Free'          label :: Int        ptr   :: IExpr
+  | RefAssign'     label :: Int        ptr   :: IExpr      val :: IExpr
+  | Continue'      label :: Int
+  | Break'         label :: Int
+deriving Stat' : Show
+
+data IExpr 
+  | IConst        val  :: Int
+  | Var           name :: String
+  | Plus          left :: IExpr       right :: IExpr
+  | Minus         left :: IExpr       right :: IExpr
+  | Times         left :: IExpr       right :: IExpr
+  | Divide        left :: IExpr       right :: IExpr
+  | Deref         ptr  :: IExpr
+deriving IExpr : Eq, Show
+
+data BExpr
+  | BConst        val  :: Bool
+  | BVar          name :: String
+  | LessThan      left :: IExpr       right :: IExpr
+  | GreaterThan   left :: IExpr       right :: IExpr
+  | LessEqual     left :: IExpr       right :: IExpr
+  | GreaterEqual  left :: IExpr       right :: IExpr
+  | IEqual        left :: IExpr       right :: IExpr
+  | BEqual        left :: BExpr       right :: BExpr
+  | And           left :: BExpr       right :: BExpr
+  | Or            left :: BExpr       right :: BExpr
+  | Not           val  :: BExpr
+deriving BExpr : Eq, Show
+
+
+data Expr | B BExpr
+          | I IExpr
+deriving Expr : Eq, Show
+
+data Code | CBExpr   BExpr
+          | CIExpr   IExpr
+          | CStat    Stat'
+          | CProc    Proc'
+          | CProgram Program'
+
+type Procs = [Proc]
+type Procs' = [Proc']
+type Exprs = [Expr]
+
