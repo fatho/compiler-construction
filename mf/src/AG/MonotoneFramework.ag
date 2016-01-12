@@ -31,7 +31,10 @@ attr Program' Stat'
     syn labels :: {[Label]}
     syn flow   :: {[(Label, Label)]}
     syn rflow  :: {[(Label, Label)]}
+    
+attr Program' Stat' IExpr BExpr
     syn vars  use {++} {[]} :: {[Var]}
+    
 {
 data Block = BBlock       Label     BExpr
            | SkipBlock    Label 
@@ -97,6 +100,12 @@ sem Stat'
       
 sem Stat'
     | IAssign' lhs.vars = [@name]  
+    
+sem IExpr
+    | Var lhs.vars = [@name]
+    
+--sem BExpr
+--    | BVar lhs.vars = [@name]
         
 {
 nextUnique :: Int -> (Int, Int)
