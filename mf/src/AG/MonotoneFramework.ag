@@ -31,6 +31,7 @@ attr Program' Stat'
     syn labels :: {[Label]}
     syn flow   :: {[(Label, Label)]}
     syn rflow  :: {[(Label, Label)]}
+    syn vars  use {++} {[]} :: {[Var]}
 {
 data Block = BBlock       Label     BExpr
            | SkipBlock    Label 
@@ -93,7 +94,10 @@ sem Stat'
       While'      
       IAssign'    
       Seq'        lhs.rflow = reverse @flow
-    
+      
+sem Stat'
+    | IAssign' lhs.vars = [@name]  
+        
 {
 nextUnique :: Int -> (Int, Int)
 nextUnique u = (u+1, u)
