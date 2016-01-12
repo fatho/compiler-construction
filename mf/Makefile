@@ -20,7 +20,7 @@ src/Parser.hs: src/Parser.y
 #  -f              --semfuns                       generate semantic functions
 #  -w              --wrappers                      generate wappers for semantic domains
 #  -s              --signatures                    generate signatures for semantic functions
-src/AttributeGrammar.hs: src/AttributeGrammar.ag src/AG/Program.ag
+src/AttributeGrammar.hs: src/AttributeGrammar.ag src/AG/Program.ag src/AG/MonotoneFramework.ag
 	cd src && uuagc -Hdcfws --self AttributeGrammar.ag --module AttributeGrammar
 
 #----------------------------

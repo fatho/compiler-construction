@@ -8,6 +8,8 @@ import           MonotoneFrameworks.Instance
 import           MonotoneFrameworks.Lattice (Lattice)
 import qualified MonotoneFrameworks.Lattice as Lattice
 
+import qualified CCO.Printing as Printing
+
 type Results l a = Map.Map l a
 
 data MFP l a = MFP
@@ -58,3 +60,6 @@ mf Instance{..} = mfpResults where
                      , let closed = transferFunction l open
                      , closed /= Lattice.bottom ]
     }
+
+instance (Show l, Show a) => Printing.Printable (MFP l a) where
+  pp = Printing.showable

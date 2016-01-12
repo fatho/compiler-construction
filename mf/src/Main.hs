@@ -3,7 +3,8 @@ module Main where
 import qualified Lexer
 import qualified Parser
 import qualified AttributeGrammar as AG
-import MonotoneFrameworks
+import qualified MonotoneFrameworks as MF
+import qualified Analyses.ConstantPropagation as CP
 
 import CCO.Component    (Component, printer, component, ioWrap)
 import Control.Arrow    (arr, (>>>))
@@ -11,7 +12,9 @@ import Control.Arrow    (arr, (>>>))
 parser :: Component String AG.Program
 parser = arr $ Parser.happy . Lexer.alex
 
-main = ioWrap (parser >>> arr toLabeledProgram >>> printer)
+doCP prog = (prog,  MF.mf $ CP.constantPropagation prog) 
+
+main = ioWrap (parser >>> arr toLabeledProgram >>> arr doCP >>> arr show)
 
 toLabeledProgram :: AG.Program -> AG.Program'
 toLabeledProgram prog = 
