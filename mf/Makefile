@@ -21,7 +21,7 @@ src/Parser.hs: src/Parser.y
 #  -w              --wrappers                      generate wappers for semantic domains
 #  -s              --signatures                    generate signatures for semantic functions
 src/AttributeGrammar.hs: src/AttributeGrammar.ag src/AG/Program.ag
-	cd src && uuagc -Hdcfws AttributeGrammar.ag --module AttributeGrammar
+	cd src && uuagc -Hdcfws --self AttributeGrammar.ag --module AttributeGrammar
 
 #----------------------------
 

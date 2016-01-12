@@ -3,6 +3,7 @@ module Main where
 import qualified Lexer
 import qualified Parser
 import qualified AttributeGrammar as AG
+import MonotoneFrameworks
 
 import CCO.Component    (Component, printer, component, ioWrap)
 import Control.Arrow    (arr, (>>>))

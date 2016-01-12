@@ -24,8 +24,13 @@ executable mf
                        Parser
                        Dev
                        AttributeGrammar
+                       MonotoneFrameworks.Lattice
+                       MonotoneFrameworks.Instance
+                       MonotoneFrameworks.MaximumFixpoint
   build-depends:       base >= 4 && < 5,
                        containers == 0.5.*,
                        array == 0.5.*,
-                       uu-cco
+                       uu-cco,
+                       mtl,
+                       transformers
   hs-source-dirs:      src                     
