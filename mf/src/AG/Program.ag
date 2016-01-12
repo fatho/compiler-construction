@@ -2,7 +2,11 @@
 import qualified Data.Map as M
 import qualified Data.Maybe as Maybe
 import qualified Data.List as L
+
+import CCO.Printing
 }
+
+type Label = Int
 
 data Program
   | Program   procs :: Procs
@@ -19,7 +23,7 @@ data Proc
 deriving Proc : Show
 
 data Proc'
-  | Proc'         labelEntry :: Int  labelReturn :: Int    name :: String  inp :: {[String]}  out :: String   stat :: Stat'
+  | Proc'         labelEntry :: Label  labelReturn :: Label    name :: String  inp :: {[String]}  out :: String   stat :: Stat'
 deriving Proc' : Show
 
 data Stat
@@ -38,18 +42,18 @@ data Stat
 deriving Stat : Show
 
 data Stat'
-  | Skip'          label :: Int
-  | IfThenElse'    labelc :: Int       cond  :: BExpr      stat1  :: Stat'     stat2 :: Stat'
-  | While'         labelc :: Int       cond  :: BExpr      stat   :: Stat'
-  | Call'          labelCall :: Int  labelExit :: Int      name  :: String     params :: Exprs    out :: String
-  | IAssign'       label :: Int        name  :: String     val    :: IExpr
-  | BAssign'       label :: Int        name  :: String     val    :: BExpr
-  | Seq'           stat1 :: Stat'      stat2  :: Stat'
-  | Malloc'        label :: Int        name  :: String     size   :: IExpr
-  | Free'          label :: Int        ptr   :: IExpr
-  | RefAssign'     label :: Int        ptr   :: IExpr      val :: IExpr
-  | Continue'      label :: Int
-  | Break'         label :: Int
+  | Skip'          label :: Label
+  | IfThenElse'    labelc :: Label       cond  :: BExpr      stat1  :: Stat'     stat2 :: Stat'
+  | While'         labelc :: Label       cond  :: BExpr      stat   :: Stat'
+  | Call'          labelCall :: Label    labelExit :: Label  name  :: String     params :: Exprs    out :: String
+  | IAssign'       label :: Label        name  :: String     val    :: IExpr
+  | BAssign'       label :: Label        name  :: String     val    :: BExpr
+  | Seq'           stat1 :: Stat'        stat2  :: Stat'
+  | Malloc'        label :: Label        name  :: String     size   :: IExpr
+  | Free'          label :: Label        ptr   :: IExpr
+  | RefAssign'     label :: Label        ptr   :: IExpr      val :: IExpr
+  | Continue'      label :: Label
+  | Break'         label :: Label
 deriving Stat' : Show
 
 data IExpr 
@@ -91,3 +95,7 @@ type Procs = [Proc]
 type Procs' = [Proc']
 type Exprs = [Expr]
 
+{
+instance Printable Program where
+  pp = showable
+}
