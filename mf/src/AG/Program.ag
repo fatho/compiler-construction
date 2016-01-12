@@ -1,3 +1,4 @@
+imports
 {
 import qualified Data.Map as M
 import qualified Data.Maybe as Maybe
@@ -100,5 +101,8 @@ type Exprs = [Expr]
 
 {
 instance Printable Program where
+  pp = showable
+  
+instance Printable Program' where
   pp = showable
 }
