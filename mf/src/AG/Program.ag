@@ -6,7 +6,10 @@ import qualified Data.List as L
 import CCO.Printing
 }
 
+{
 type Label = Int
+type Var = String
+}
 
 data Program
   | Program   procs :: Procs
@@ -19,24 +22,24 @@ data Program'
   deriving Program' : Show
 
 data Proc
-  | Proc          name :: String  inp :: {[String]}  out :: String   stat :: Stat
+  | Proc          name :: Var  inp :: {[String]}  out :: String   stat :: Stat
 deriving Proc : Show
 
 data Proc'
-  | Proc'         labelEntry :: Label  labelReturn :: Label    name :: String  inp :: {[String]}  out :: String   stat :: Stat'
+  | Proc'         labelEntry :: Label  labelReturn :: Label    name :: Var  inp :: {[String]}  out :: String   stat :: Stat'
 deriving Proc' : Show
 
 data Stat
   | Skip
-  | IfThenElse    cond  :: {BExpr}      stat1  :: Stat      stat2 :: Stat
+  | IfThenElse    cond  :: {BExpr}      stat1  :: Stat       stat2 :: Stat
   | While         cond  :: {BExpr}      stat   :: Stat
-  | Call          name  :: String     params :: {Exprs}    out :: String
-  | IAssign       name  :: String     val    :: {IExpr}
-  | BAssign       name  :: String     val    :: {BExpr}
-  | Seq           stat1 :: Stat       stat2  :: Stat
-  | Malloc        name  :: String     size   :: {IExpr}
+  | Call          name  :: Var          params :: {Exprs}    out :: String
+  | IAssign       name  :: Var          val    :: {IExpr}
+  | BAssign       name  :: Var          val    :: {BExpr}
+  | Seq           stat1 :: Stat         stat2  :: Stat
+  | Malloc        name  :: Var          size   :: {IExpr}
   | Free          ptr   :: {IExpr}
-  | RefAssign     ptr   :: {IExpr}    val    :: {IExpr}
+  | RefAssign     ptr   :: {IExpr}      val    :: {IExpr}
   | Continue
   | Break
 deriving Stat : Show
@@ -45,11 +48,11 @@ data Stat'
   | Skip'          label :: Label
   | IfThenElse'    labelc :: Label       cond  :: BExpr      stat1  :: Stat'     stat2 :: Stat'
   | While'         labelc :: Label       cond  :: BExpr      stat   :: Stat'
-  | Call'          labelCall :: Label    labelExit :: Label  name  :: String     params :: Exprs    out :: String
-  | IAssign'       label :: Label        name  :: String     val    :: IExpr
-  | BAssign'       label :: Label        name  :: String     val    :: BExpr
+  | Call'          labelCall :: Label    labelExit :: Label  name :: Var     params :: Exprs    out :: String
+  | IAssign'       label :: Label        name :: Var     val    :: IExpr
+  | BAssign'       label :: Label        name :: Var     val    :: BExpr
   | Seq'           stat1 :: Stat'        stat2  :: Stat'
-  | Malloc'        label :: Label        name  :: String     size   :: IExpr
+  | Malloc'        label :: Label        name :: Var     size   :: IExpr
   | Free'          label :: Label        ptr   :: IExpr
   | RefAssign'     label :: Label        ptr   :: IExpr      val :: IExpr
   | Continue'      label :: Label
@@ -58,7 +61,7 @@ deriving Stat' : Show
 
 data IExpr 
   | IConst        val  :: Int
-  | Var           name :: String
+  | Var           name :: Var
   | Plus          left :: IExpr       right :: IExpr
   | Minus         left :: IExpr       right :: IExpr
   | Times         left :: IExpr       right :: IExpr
@@ -68,7 +71,7 @@ deriving IExpr : Eq, Show
 
 data BExpr
   | BConst        val  :: Bool
-  | BVar          name :: String
+  | BVar          name :: Var
   | LessThan      left :: IExpr       right :: IExpr
   | GreaterThan   left :: IExpr       right :: IExpr
   | LessEqual     left :: IExpr       right :: IExpr

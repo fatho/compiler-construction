@@ -1,0 +1,42 @@
+attr Program' Stat'
+    syn init   :: Label
+    syn finals :: [Label]
+    syn blocks :: [Block]
+    syn labels :: [Label]
+    syn flow   :: [(Label, Label)]
+    
+
+data Block = 
+    | BBlock       label :: Label                 val :: {BExpr}
+    | SkipBlock    label :: Label 
+    | IAssignBlock label :: Label name :: Var     val :: {IExpr}
+    -- | BAssignBlock Label Var {BExpr}  
+
+
+sem Stat'
+    | Skip'       lhs.init = @label
+    | IfThenElse' lhs.init = @labelc
+    | While'      lhs.init = @labelc
+    | IAssign'    lhs.init = @label
+    | Seq'        lhs.init = @stat1.init
+    
+sem Stat'
+    | Skip'       lhs.finals = [@label]
+    | IfThenElse' lhs.finals = [@stat1.finals ++ @stat2.finals]
+    | While'      lhs.finals = [@labelc]
+    | IAssign'    lhs.finals = [@label]
+    | Seq'        lhs.finals = @stat1.finals
+    
+sem Stat'
+    | Skip'       lhs.blocks = [SkipBlock @label]
+    | IfThenElse' lhs.blocks = (BBlock labelc cond) : @stat1.blocks ++ @stat2.blocks
+    | While'      lhs.blocks = (BBlock labelc cond) : @stat.blocks
+    | IAssign'    lhs.blocks = [IAssignBlock @label @name @val]
+    | Seq'        lhs.blocks = @stat1.blocks ++ @stat2.blocks
+    
+sem Stat'
+    | Skip'       lhs.labels = map label @blocks
+    | IfThenElse' lhs.labels = 
+    | While'      lhs.labels = 
+    | IAssign'    lhs.labels = 
+    | Seq'        lhs.labels = 
