@@ -30,7 +30,7 @@ attr Program' Stat'
     syn blocks :: {[Block]}
     syn labels :: {[Label]}
     syn flow   :: {[(Label, Label)]}
-    
+    syn rflow  :: {[(Label, Label)]}
 {
 data Block = BBlock       Label     BExpr
            | SkipBlock    Label 
@@ -74,11 +74,25 @@ sem Stat'
       Seq'        lhs.labels = map labelFromBlock @blocks
       
 sem Stat'
-    | Skip'       lhs.flow = []
-    | IfThenElse' lhs.flow = @stat1.flow ++ @stat2.flow ++ [(@labelc, @stat1.init)] ++ [(@labelc, @stat2.init)]
-    | While'      lhs.flow = @stat.flow ++ [(@labelc, @stat.init)] ++ zip @stat.finals (repeat @labelc)
-    | IAssign'    lhs.flow = []
-    | Seq'        lhs.flow = @stat1.flow ++ @stat2.flow ++ zip @stat1.finals (repeat @stat2.init)
+    | Skip'       loc.flow = []
+    | IfThenElse' loc.flow = @stat1.flow ++ @stat2.flow ++ [(@labelc, @stat1.init)] ++ [(@labelc, @stat2.init)]
+    | While'      loc.flow = @stat.flow ++ [(@labelc, @stat.init)] ++ zip @stat.finals (repeat @labelc)
+    | IAssign'    loc.flow = []
+    | Seq'        loc.flow = @stat1.flow ++ @stat2.flow ++ zip @stat1.finals (repeat @stat2.init)
+   
+sem Stat'
+    | Skip'       
+      IfThenElse' 
+      While'      
+      IAssign'    
+      Seq'        lhs.flow = @flow
+      
+sem Stat'
+    | Skip'       
+      IfThenElse' 
+      While'      
+      IAssign'    
+      Seq'        lhs.rflow = reverse @flow
     
 {
 nextUnique :: Int -> (Int, Int)
