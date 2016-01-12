@@ -24,10 +24,11 @@ executable mf
                        Parser
                        Dev
                        AttributeGrammar
+                       Analyses.ConstantPropagation
                        MonotoneFrameworks.Lattice
                        MonotoneFrameworks.Instance
                        MonotoneFrameworks.MaximumFixpoint
-                       Analyses.ConstantPropagation
+                       Util.Printing
   build-depends:       base >= 4 && < 5,
                        containers == 0.5.*,
                        array == 0.5.*,

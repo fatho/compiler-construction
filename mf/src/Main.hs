@@ -12,9 +12,9 @@ import Control.Arrow    (arr, (>>>))
 parser :: Component String AG.Program
 parser = arr $ Parser.happy . Lexer.alex
 
-doCP prog = (prog,  MF.mf $ CP.constantPropagation prog) 
+doCP prog = MF.mf $ CP.constantPropagation prog 
 
-main = ioWrap (parser >>> arr toLabeledProgram >>> arr doCP >>> arr show)
+main = ioWrap (parser >>> arr toLabeledProgram >>> arr doCP >>> printer)
 
 toLabeledProgram :: AG.Program -> AG.Program'
 toLabeledProgram prog = 
