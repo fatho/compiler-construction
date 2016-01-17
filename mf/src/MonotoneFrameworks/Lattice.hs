@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, DeriveFunctor #-}
 module MonotoneFrameworks.Lattice where
     
+import           Control.Applicative
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 import           Data.Maybe (fromMaybe)
@@ -8,7 +9,7 @@ import           Data.Maybe (fromMaybe)
 import qualified CCO.Printing as PP
 import qualified Util.Printing as UPP
 
--- | Describes the operations of a join semi-lattice 
+  -- | Describes the operations of a join semi-lattice 
 class Eq a => JoinSemiLattice a where
   -- | Returns the bottom value in the lattice.
   bottom :: a
@@ -43,7 +44,7 @@ data Lifted a
   = Bottom
   | Value a
   | Top
-  deriving (Eq, Show, Read, Functor)
+  deriving (Eq, Ord, Show, Read, Functor)
 
 instance Applicative Lifted where
   pure = Value
@@ -51,6 +52,37 @@ instance Applicative Lifted where
   Top       <*> _         = Top
   _         <*> Top       = Top
   _         <*> _         = Bottom
+
+instance Num a => Num (Lifted a) where
+  (+) = liftA2 (+)
+  (-) = liftA2 (-)
+  (*) = liftA2 (*)
+  abs = fmap abs
+  signum = fmap signum
+  negate = fmap negate
+  fromInteger = Value . fromInteger
+
+instance Real a => Real (Lifted a) where
+  toRational Bottom    = error "bottom is not a rational"
+  toRational (Value v) = toRational v
+  toRational Top       = error "top is not a rational"
+
+-- | Why on earth is "Enum" a requirement for Integral? We actually just need the 'div' operation.
+instance Enum a => Enum (Lifted a) where
+  fromEnum Bottom    = error "bottom is not enumerable"
+  fromEnum (Value v) = fromEnum v
+  fromEnum Top       = error "top is not enumerable"
+  toEnum = Value . toEnum
+
+instance Integral a => Integral (Lifted a) where
+  toInteger Bottom    = error "bottom is not an integer"
+  toInteger (Value v) = toInteger v
+  toInteger Top       = error "top is not an integer"
+  quotRem x y         = 
+    case liftA2 quotRem x y of
+      Bottom -> (Bottom, Bottom)
+      Value (a,b) -> (Value a, Value b)
+      Top -> (Top, Top)
 
 instance Eq a => JoinSemiLattice (Lifted a) where
   bottom = Bottom
@@ -94,12 +126,7 @@ instance Ord a => Applicative (Function a) where
 
 instance (Ord a, JoinSemiLattice b) => JoinSemiLattice (Function a b) where
   bottom = Function Map.empty bottom
-  join a b = Function fun' bottom' where
-    fun' = Map.mergeWithKey combine onlya onlyb (functionSpecial a) (functionSpecial b) 
-    combine _ x y = Just $ join x y
-    onlya = fmap (join (functionDefault b))
-    onlyb = fmap (join (functionDefault a))
-    bottom' = join (functionDefault a) (functionDefault b)
+  join = liftA2 join
 
 instance Show a => PP.Printable (Lifted a) where
   pp = PP.showable

@@ -3,6 +3,7 @@ module Util.Printing where
 
 import Control.Arrow ((***))    
 import qualified Data.Map as Map
+import qualified Data.Set as Set
     
 import qualified CCO.Printing as PP
 
@@ -20,3 +21,6 @@ ppBoth (x,y) = (PP.pp x, PP.pp y)
 
 instance PP.Printable [Char] where
   pp = PP.text
+ 
+instance Show a => PP.Printable (Set.Set a) where
+  pp = PP.showable

@@ -14,16 +14,16 @@ import qualified Util.Printing as UPP
 type Results l a = Map.Map l a
 
 data MFP l a = MFP
-  { mfpOpen   :: Results l a
-  , mfpClosed :: Results l a
+  { mfpContextValues :: Results l a
+  , mfpEffectValues  :: Results l a
   }
   deriving (Show)
 
 lookupValue :: (Ord l, JoinSemiLattice a) => l -> Results l a -> a
 lookupValue l res = fromMaybe Lattice.bottom $ Map.lookup l res
 
-mf :: (Ord l, JoinSemiLattice a) => Instance l a -> MFP l a
-mf Instance{..} = mfpResults where
+mfp :: (Ord l, JoinSemiLattice a) => Instance l a -> MFP l a
+mfp Instance{..} = mfpResults where
   -- initial results have extremal value for extremal labels and
   -- bottom (represented by not being present in the map) at other labels
   initialResults = Map.fromList [ (e, extremalValue) | e <- extremalLabels ]
@@ -54,8 +54,8 @@ mf Instance{..} = mfpResults where
   
   -- final step of the algorithm
   mfpResults = MFP
-    { mfpOpen   = finalResults
-    , mfpClosed = Map.fromList 
+    { mfpContextValues = finalResults
+    , mfpEffectValues  = Map.fromList 
         [ (l, closed) | l <- labels
                       , let open = lookupValue l finalResults
                       , let closed = transferFunction l open
@@ -64,10 +64,10 @@ mf Instance{..} = mfpResults where
 
 instance (PP.Printable l, PP.Printable a) => PP.Printable (MFP l a) where
   pp (MFP open closed) = 
-      PP.text "Open: "
+      PP.text "Context Values: "
       PP.>-<
       PP.indent 2 (UPP.ppMap open PP.pp PP.pp)
       PP.>-<
-      PP.text "Closed: "
+      PP.text "Effect Values: "
       PP.>-<
       PP.indent 2 (UPP.ppMap closed PP.pp PP.pp)

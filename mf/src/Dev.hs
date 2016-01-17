@@ -5,11 +5,15 @@ import qualified Data.List as L
 
 import AttributeGrammar
 import Lexer
-import Main
 import Parser
+import qualified CCO.Printing as PP
 
--- To make it all compile for the moment:
-type Analysis a = [a]
+import qualified Analyses.ConstantPropagation as CP
+import qualified Analyses.StronglyLiveVariables as SLV
+import qualified MonotoneFrameworks as MF
+
+-- | An analysis is an instance of monotone frameworks yielding some result @a@ for each label.  
+type Analysis a = MF.Instance Label a
 
 {-- How To Run (examples)
 
@@ -18,25 +22,44 @@ ghci> run slv "fib"
 
 --}
 
-slv = undefined
-cp  = undefined
+slv = SLV.stronglyLiveVariables
 
-run :: (Eq a, Show a) => (Program' -> Analysis a) -> String -> IO ()
+cp :: Program' -> Analysis CP.VarEnv
+cp  = CP.constantPropagation
+
+run :: (MF.JoinSemiLattice a, PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
 run = runAnalysis'
 
 -- run some analysis by passing an analysis function and a 'show' function to display the result
-runAnalysis' :: (Eq a, Show a) => (Program' -> Analysis a) -> String -> IO ()
+runAnalysis' :: (MF.JoinSemiLattice a, PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
 runAnalysis' analyze programName = do
   p <- parse programName
-  putStrLn "OUTPUT:"
-  putStrLn (show p)
-  putStrLn "G'bye"
+  let p' = toLabeledProgram p
+  putStrLn "Program with Labels:"
+  putStrLn (show p')
+  putStrLn ""
+  let pSyn = programSyn p'
+  putStrLn "Labels:"
+  putStrLn (show $ labels_Syn_Program' pSyn)
+  putStrLn ""
+  putStrLn "Blocks:"
+  putStrLn (show $ blocks_Syn_Program' pSyn)
+  putStrLn ""
+  putStrLn "Flow:"
+  putStrLn (show $ flow_Syn_Program' pSyn)
+  putStrLn ""
+  putStrLn "Reverse Flow:"
+  putStrLn (show$ reverseFlow $ flow_Syn_Program' pSyn)
+  putStrLn ""
+  putStrLn "Result of the analysis:"
+  PP.renderIO_ 80 (PP.pp $ MF.mfp (analyze p'))
+  putStrLn ""
 
 -- parse program
 
 parse :: String -> IO Program
 parse programName = do
-  let fileName = "../examples/"++programName++".c"
+  let fileName = "./examples/"++programName++".c"
   content <- readFile fileName
   return . happy . alex $ content
 

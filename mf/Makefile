@@ -21,7 +21,7 @@ src/Parser.hs: src/Parser.y
 #  -w              --wrappers                      generate wappers for semantic domains
 #  -s              --signatures                    generate signatures for semantic functions
 src/AttributeGrammar.hs: src/AttributeGrammar.ag src/AG/Program.ag src/AG/MonotoneFramework.ag
-	cd src && uuagc -Hdcfws --self AttributeGrammar.ag --module AttributeGrammar
+	cd src && uuagc -Hdcfws --self --datarecords AttributeGrammar.ag --module AttributeGrammar
 
 #----------------------------
 
@@ -33,5 +33,8 @@ haskell: generate
 
 clean:
 	rm -f src/AttributeGrammar.hs src/Parser.hs src/Lexer.hs src/*.hi src/*.o src/Main
+
+run: haskell
+	cabal run
 
 .PHONY: default all clean generate haskell

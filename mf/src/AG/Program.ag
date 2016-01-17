@@ -3,6 +3,7 @@ imports
 import qualified Data.Map as M
 import qualified Data.Maybe as Maybe
 import qualified Data.List as L
+import qualified Data.Set as S
 
 import CCO.Printing
 }
@@ -27,7 +28,7 @@ data Proc
 deriving Proc : Show
 
 data Proc'
-  | Proc'         labelEntry :: Label  labelReturn :: Label    name :: Var  inp :: {[String]}  out :: String   stat :: Stat'
+  | Proc'         labelEntry :: Label  labelExit :: Label    name :: Var  inp :: {[String]}  out :: String   stat :: Stat'
 deriving Proc' : Show
 
 data Stat
@@ -49,7 +50,7 @@ data Stat'
   | Skip'          label :: Label
   | IfThenElse'    labelc :: Label       cond  :: BExpr      stat1  :: Stat'     stat2 :: Stat'
   | While'         labelc :: Label       cond  :: BExpr      stat   :: Stat'
-  | Call'          labelCall :: Label    labelExit :: Label  name :: Var     params :: Exprs    out :: String
+  | Call'          labelCall :: Label    labelReturn :: Label  name :: Var     params :: Exprs    out :: String
   | IAssign'       label :: Label        name :: Var     val    :: IExpr
   | BAssign'       label :: Label        name :: Var     val    :: BExpr
   | Seq'           stat1 :: Stat'        stat2  :: Stat'
@@ -100,6 +101,39 @@ type Procs' = [Proc']
 type Exprs = [Expr]
 
 {
+varSetIExpr :: IExpr -> S.Set Var -> S.Set Var
+varSetIExpr (IConst v)   vs = vs
+varSetIExpr (Var name)   vs = S.insert name vs
+varSetIExpr (Plus l r)   vs = varSetIExpr l vs `S.union` varSetIExpr r vs 
+varSetIExpr (Minus l r)  vs = varSetIExpr l vs `S.union` varSetIExpr r vs 
+varSetIExpr (Times l r)  vs = varSetIExpr l vs `S.union` varSetIExpr r vs 
+varSetIExpr (Divide l r) vs = varSetIExpr l vs `S.union` varSetIExpr r vs 
+varSetIExpr (Deref ptr)  vs = error "Deref not implemented"
+
+varSetBExpr :: BExpr -> S.Set Var -> S.Set Var
+varSetBExpr (BConst v)         vs = vs        
+varSetBExpr (BVar name)        vs = S.insert name vs        
+varSetBExpr (LessThan l r)     vs = varSetIExpr l vs `S.union` varSetIExpr r vs            
+varSetBExpr (GreaterThan l r)  vs = varSetIExpr l vs `S.union` varSetIExpr r vs            
+varSetBExpr (LessEqual l r)    vs = varSetIExpr l vs `S.union` varSetIExpr r vs
+varSetBExpr (GreaterEqual l r) vs = varSetIExpr l vs `S.union` varSetIExpr r vs            
+varSetBExpr (IEqual l r)       vs = varSetIExpr l vs `S.union` varSetIExpr r vs        
+varSetBExpr (BEqual l r)       vs = varSetBExpr l vs `S.union` varSetBExpr r vs     
+varSetBExpr (And l r)          vs = varSetBExpr l vs `S.union` varSetBExpr r vs     
+varSetBExpr (Or l r)           vs = varSetBExpr l vs `S.union` varSetBExpr r vs 
+varSetBExpr (Not x)            vs = varSetBExpr x vs
+
+-- | Evaluates an 'IExpr' in an arbitrary numerical context. 
+evalIExpr :: (Integral a) => IExpr -> (Var -> a) -> a
+evalIExpr e env = go e where
+  go (IConst v) = fromIntegral v
+  go (Var name) = env name
+  go (Plus l r) = go l + go r
+  go (Minus l r) = go l - go r
+  go (Times l r) = go l * go r
+  go (Divide l r) = go l `div` go r
+  go (Deref ptr) = error "Deref not implemented"
+  
 instance Printable Program where
   pp = showable
   

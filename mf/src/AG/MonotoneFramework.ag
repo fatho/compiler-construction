@@ -1,15 +1,31 @@
-attr Stat
+imports
+{
+import Data.Maybe
+import Data.List (find)
+}
+
+{
+type FlowEdge = (Label, Label)
+type Flow = [FlowEdge]
+type InterFlow = [(Label, Label, Label, Label)]
+}
+
+attr Stat Proc Procs
     chn label :: Label
 
 attr Program
     syn prog :: Program'
-    
+
+attr Proc Procs
+    syn procs use {++} {[]} :: Procs'
+
 attr Stat
-    syn stat :: Stat'
+    syn stat  :: Stat'
     
 sem Program 
-    | Program lhs.prog = Program' [] @stat.stat
-              stat.label = 0
+    | Program lhs.prog = Program' @procs.procs @stat.stat
+              procs.label = 0
+              stat.label = @procs.label
     
 sem Stat
     | Skip       
@@ -22,31 +38,55 @@ sem Stat
     | IfThenElse lhs.stat = IfThenElse' @loc.label @cond @stat1.stat @stat2.stat
     | While      lhs.stat = While'      @loc.label @cond @stat.stat
     | IAssign    lhs.stat = IAssign'    @loc.label @name @val
-    | Seq        lhs.stat = Seq' @stat1.stat @stat2.stat
+    | Seq        lhs.stat = Seq'        @stat1.stat @stat2.stat
+    
+    | Call       loc.lblCall :: uniqueref label
+                 loc.lblReturn :: uniqueref label
+                 lhs.stat = Call' @loc.lblCall @loc.lblReturn @name @params @out
 
+sem Proc
+    | Proc  loc.lblEntry :: uniqueref label
+            loc.lblExit  :: uniqueref label
+            lhs.procs     = [ Proc' @loc.lblEntry @loc.lblExit  @name @inp @out @stat.stat ]
+
+  
 attr Program' Stat'
     syn init   :: Label
-    syn finals :: {[Label]}
-    syn blocks :: {[Block]}
-    syn labels :: {[Label]}
-    syn flow   :: {[(Label, Label)]}
-    syn rflow  :: {[(Label, Label)]}
+    syn finals use {++} {[]} :: {[Label]}
+
+attr Program' Stat' Procs' Proc'
+    syn blocks    use {++} {[]} :: {[Block]}
+    syn labels    use {++} {[]} :: {[Label]}
+    syn flow      use {++} {[]} :: {Flow}
+    syn interflow use {++} {[]} :: {[(Label, Label, Label, Label)]} 
     
-attr Program' Stat' IExpr BExpr
+attr Stat' Procs' Proc'
+    inh procs :: Procs'
+
+attr Program' Stat' Procs' Proc' IExpr BExpr
     syn vars  use {++} {[]} :: {[Var]}
     
 {
-data Block = BBlock       Label     BExpr
-           | SkipBlock    Label 
-           | IAssignBlock Label Var IExpr
-        -- | BAssignBlock Label Var {BExpr}  
+data Block = BBlock         Label     BExpr
+           | SkipBlock      Label 
+           | IAssignBlock   Label Var IExpr
+           | ProcBeginBlock Label
+           | ProcEndBlock   Label
+           | CallBlock      Label     Label
+        -- | BAssignBlock Label Var {BExpr}
+  deriving (Eq, Show)
 }
+
+sem Program'
+    | Program' stat.procs = @procs.self
+               procs.procs = @procs.self
 
 sem Stat'
     | Skip'       lhs.init = @label
     | IfThenElse' lhs.init = @labelc
     | While'      lhs.init = @labelc
     | IAssign'    lhs.init = @label
+    | Call'       lhs.init = @labelCall
     | Seq'        lhs.init = @stat1.init
     
 sem Stat'
@@ -54,15 +94,22 @@ sem Stat'
     | IfThenElse' lhs.finals = @stat1.finals ++ @stat2.finals
     | While'      lhs.finals = [@labelc]
     | IAssign'    lhs.finals = [@label]
-    | Seq'        lhs.finals = @stat1.finals
+    | Call'       lhs.finals = [@labelCall]
+    | Seq'        lhs.finals = @stat2.finals
     
 sem Stat'
     | Skip'       loc.blocks = [SkipBlock @label]
     | IfThenElse' loc.blocks = (BBlock @labelc @cond.self) : @stat1.blocks ++ @stat2.blocks
     | While'      loc.blocks = (BBlock @labelc @cond.self) : @stat.blocks
     | IAssign'    loc.blocks = [IAssignBlock @label @name @val.self]
+    | Call'       loc.blocks = [CallBlock @labelCall @labelReturn]
     | Seq'        loc.blocks = @stat1.blocks ++ @stat2.blocks
-    
+
+sem Proc'
+    | Proc'       loc.blocks = [ ProcBeginBlock @labelEntry, ProcEndBlock @labelExit ] ++ @stat.blocks
+                  lhs.blocks = @blocks
+                  lhs.labels = concatMap labelsFromBlock @blocks ++ @stat.labels
+
 sem Stat'
     | Skip'       
       IfThenElse' 
@@ -75,29 +122,21 @@ sem Stat'
       IfThenElse' 
       While' 
       IAssign' 
-      Seq'        lhs.labels = map labelFromBlock @blocks
+      Seq'        lhs.labels = concatMap labelsFromBlock @blocks
       
 sem Stat'
-    | Skip'       loc.flow = []
-    | IfThenElse' loc.flow = @stat1.flow ++ @stat2.flow ++ [(@labelc, @stat1.init)] ++ [(@labelc, @stat2.init)]
-    | While'      loc.flow = @stat.flow ++ [(@labelc, @stat.init)] ++ zip @stat.finals (repeat @labelc)
-    | IAssign'    loc.flow = []
-    | Seq'        loc.flow = @stat1.flow ++ @stat2.flow ++ zip @stat1.finals (repeat @stat2.init)
-   
-sem Stat'
-    | Skip'       
-      IfThenElse' 
-      While'      
-      IAssign'    
-      Seq'        lhs.flow = @flow
-      
-sem Stat'
-    | Skip'       
-      IfThenElse' 
-      While'      
-      IAssign'    
-      Seq'        lhs.rflow = reverse @flow
-      
+    | Skip'       lhs.flow = []
+    | IfThenElse' lhs.flow = @stat1.flow ++ @stat2.flow ++ [(@labelc, @stat1.init)] ++ [(@labelc, @stat2.init)]
+    | While'      lhs.flow = @stat.flow ++ [(@labelc, @stat.init)] ++ zip @stat.finals (repeat @labelc)
+    | IAssign'    lhs.flow = []
+    | Call'       loc.callee = findProc @name @lhs.procs
+                  loc.lEntry    = labelEntry_Proc'_Proc' @callee
+                  loc.lExit   = labelExit_Proc'_Proc' @callee
+                  lhs.interflow = [ (@labelCall, @lEntry, @lExit , @labelReturn) ]
+                  lhs.flow = [ (@labelCall, @lEntry)
+                             , (@lExit, @labelReturn) ]
+    | Seq'        lhs.flow = @stat1.flow ++ @stat2.flow ++ zip @stat1.finals (repeat @stat2.init)
+    
 sem Stat'
     | IAssign' lhs.vars = [@name]  
     
@@ -111,8 +150,28 @@ sem IExpr
 nextUnique :: Int -> (Int, Int)
 nextUnique u = (u+1, u)
 
-labelFromBlock :: Block -> Label
-labelFromBlock (BBlock       label _)   = label
-labelFromBlock (SkipBlock    label)     = label
-labelFromBlock (IAssignBlock label _ _) = label
+reverseFlow :: Flow -> Flow
+reverseFlow = map (\(x,y) -> (y,x))
+
+labelsFromBlock :: Block -> [Label]
+labelsFromBlock (BBlock       label _)   = [label]
+labelsFromBlock (SkipBlock    label)     = [label]
+labelsFromBlock (IAssignBlock label _ _) = [label]
+labelsFromBlock (CallBlock lCall lRet)   = [lCall, lRet]
+labelsFromBlock (ProcBeginBlock label)   = [label]
+labelsFromBlock (ProcEndBlock   label)   = [label]
+
+-- | Finds a procedure by its name.
+findProc :: Var -> Procs' -> Proc'
+findProc v ps = fromMaybe (error $ "procedure not found: " ++ v) $
+  find (\p -> name_Proc'_Proc' p == v) ps
+
+-- | Runs the attribute grammar for 'Program'.
+toLabeledProgram :: Program -> Program'
+toLabeledProgram prog = 
+    prog_Syn_Program $ wrap_Program (sem_Program prog) Inh_Program
+
+-- | calculate synthesized attributes for programs, yielding all the data required for monotone frameworks
+programSyn :: Program' -> Syn_Program' 
+programSyn prog = wrap_Program' (sem_Program' prog) Inh_Program'
 }
