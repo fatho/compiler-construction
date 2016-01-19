@@ -10,9 +10,9 @@ import Data.Maybe
 import Data.Set as S
 
 type VarSet = S.Set AG.Var
-
+{-
 varSetLattice :: Lattice VarSet
-varSetLattice = Lattice Set.empty Set.union Set.isSubsetOf
+varSetLattice = Lattice S.empty S.union S.isSubsetOf
 
 -- | Returns for each block its transfer function.
 blockTransfer :: AG.Block -> [(AG.Label, VarSet -> VarSet)]
@@ -36,3 +36,4 @@ stronglyLiveVariables prog = inst where
     , extremalValue    = S.fromList $ AG.vars_Syn_Program' pSyn
     , labels           = AG.labels_Syn_Program' pSyn
     }
+-}

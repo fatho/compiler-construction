@@ -4,6 +4,9 @@ module MonotoneFrameworks.MaximumFixpoint where
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Maybe
+import AttributeGrammar (Flow(..), InterFlow(..))
+
+import Debug.Trace
 {-
 import qualified CCO.Printing as PP
 import qualified Util.Printing as UPP
@@ -13,13 +16,7 @@ data Lattice a = Lattice
   , join   :: a -> a -> a
   , leq    :: a -> a -> Bool
   }
-  
-data Flow l = Flow { from :: l, to :: l }
-  deriving (Eq, Ord, Show, Read)
 
-data InterFlow l = InterFlow { fromOuter, toProc, fromProc, toOuter :: l }
-  deriving (Eq, Ord, Show, Read)
-  
 callFlow :: InterFlow l -> Flow l
 callFlow InterFlow{..} = Flow fromOuter toProc
   
@@ -41,8 +38,13 @@ data Fixpoint l a = Fixpoint
   { contextValues :: Map l a
   , effectValues  :: Map l a
   }
+  deriving (Show, Read, Eq, Ord)
 
-fixpoint :: Ord l => MF l a ->  Fixpoint l a
+  
+lookupMap :: (Show k, Ord k) => k -> Map k v -> v
+lookupMap k = Map.findWithDefault (error $ "key " ++ show k ++ " not found") k
+  
+fixpoint :: (Show l, Show a, Ord l) => MF l a ->  Fixpoint l a
 fixpoint mf = mfp where
   -- bring lattice into scope
   Lattice{..} = lattice mf
@@ -54,27 +56,29 @@ fixpoint mf = mfp where
   
   -- cache outgoing edges
   outgoingMap = Map.fromListWith (++) $ [ ( from f, [f] ) | f <- flow mf ]
-  outgoing l  = outgoingMap Map.! l 
+  outgoing l  = Map.findWithDefault [] l outgoingMap 
   -- additionally propagating to outgoing edges, changes to the call label of a block
   -- affect the successors of the return label
   propagateMap = Map.unionWith (++) outgoingMap $ Map.fromList
     [ (fromOuter ifl, outgoing (toOuter ifl)) | ifl <- interFlow mf ]
-  propagate l = propagateMap Map.! l
+  propagate l = Map.findWithDefault [] l propagateMap
   
   -- 1. initial solution
-  initialSolution = Map.fromListWith (curry fst) -- first occurrence of label takes precedence
-    $  zip (extremalLabels mf) (repeat $ extremalValue mf) 
-    ++ zip (labels mf) (repeat bottom)
+  initialSolution = Map.fromList
+    $  zip (labels mf) (repeat bottom)
+    ++ zip (extremalLabels mf) (repeat $ extremalValue mf) -- last values take precedence
+
+  computeEffect lbl solution = case Map.lookup lbl interReturnMap of
+    -- not a return, just transfer context value at "from" label to effect value
+    Nothing -> transfer mf lbl (lookupMap lbl solution)
+    -- flowing out of return value: apply binary transfer function (lret == from f)
+    Just (InterFlow lcall lentry lexit lret) -> 
+      interReturn mf lcall lret (lookupMap lcall solution) (lookupMap lret solution)
 
   iter []     solution = solution -- no more edges to process, we're done
   iter (f:fs) solution =
     let toCtxVal   = solution Map.! (to f)           -- context value of successor
-        fromEffVal = case Map.lookup (from f) interReturnMap of
-          -- not a return, just transfer context value at "from" label to effect value
-          Nothing -> transfer mf (from f) (solution Map.! from f)
-          -- flowing out of return value: apply binary transfer function (lret == from f)
-          Just (InterFlow lcall lentry lexit lret) -> 
-            interReturn mf lcall lret (solution Map.! lcall) (solution Map.! lret)
+        fromEffVal = computeEffect (from f) solution
     in if fromEffVal `leq` toCtxVal -- is effect consistent?
          then iter fs solution
          else let newToCtxVal = toCtxVal `join` fromEffVal
@@ -83,7 +87,7 @@ fixpoint mf = mfp where
   -- run fixpoint iteration            
   mfp' = iter (flow mf) initialSolution
   
-  mfp = Fixpoint mfp' (Map.mapWithKey (transfer mf) mfp')
+  mfp = Fixpoint mfp' (Map.mapWithKey (\l _ -> computeEffect l mfp') mfp')
 
 {-
 instance (PP.Printable l, PP.Printable a) => PP.Printable (Fixpoint l a) where

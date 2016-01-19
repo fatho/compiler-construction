@@ -6,7 +6,7 @@ import qualified Data.Map as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Maybe
-
+import AttributeGrammar (Flow(..), InterFlow(..))
 import MonotoneFrameworks.MaximumFixpoint
 
 type Context = Map

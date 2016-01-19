@@ -29,12 +29,13 @@ generate: src/AttributeGrammar.hs src/Lexer.hs src/Parser.hs
 
 # cabal build will detect changes in source files itself
 haskell: generate
+	cabal configure --enable-profiling
 	cabal build
 
 clean:
 	rm -f src/AttributeGrammar.hs src/Parser.hs src/Lexer.hs src/*.hi src/*.o src/Main
 
 run: haskell
-	cabal run
+	cabal run -- +RTS -xc
 
 .PHONY: default all clean generate haskell

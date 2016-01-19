@@ -13,7 +13,7 @@ import qualified Analyses.StronglyLiveVariables as SLV
 import qualified MonotoneFrameworks as MF
 
 -- | An analysis is an instance of monotone frameworks yielding some result @a@ for each label.  
-type Analysis a = MF.Instance Label a
+type Analysis a = MF.MF Label a
 
 {-- How To Run (examples)
 
@@ -22,37 +22,33 @@ ghci> run slv "fib"
 
 --}
 
-slv = SLV.stronglyLiveVariables
+slv = undefined -- SLV.stronglyLiveVariables
 
-cp :: Program' -> Analysis CP.VarEnv
+cp :: Program' -> Analysis CP.VarMap
 cp  = CP.constantPropagation
 
-run :: (MF.JoinSemiLattice a, PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
+run :: (Show a) => (Program' -> Analysis a) -> String -> IO ()
 run = runAnalysis'
 
+printInfo :: Show a => String -> a -> IO ()
+printInfo name val = putStrLn (name ++ ":") >> print val >> putStrLn ""
+
 -- run some analysis by passing an analysis function and a 'show' function to display the result
-runAnalysis' :: (MF.JoinSemiLattice a, PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
+runAnalysis' :: (Show a) => (Program' -> Analysis a) -> String -> IO ()
 runAnalysis' analyze programName = do
   p <- parse programName
   let p' = toLabeledProgram p
-  putStrLn "Program with Labels:"
-  putStrLn (show p')
-  putStrLn ""
+  printInfo "Program with Labels" p
   let pSyn = programSyn p'
-  putStrLn "Labels:"
-  putStrLn (show $ labels_Syn_Program' pSyn)
-  putStrLn ""
-  putStrLn "Blocks:"
-  putStrLn (show $ blocks_Syn_Program' pSyn)
-  putStrLn ""
-  putStrLn "Flow:"
-  putStrLn (show $ flow_Syn_Program' pSyn)
-  putStrLn ""
-  putStrLn "Reverse Flow:"
-  putStrLn (show$ reverseFlow $ flow_Syn_Program' pSyn)
-  putStrLn ""
-  putStrLn "Result of the analysis:"
-  PP.renderIO_ 80 (PP.pp $ MF.mfp (analyze p'))
+  printInfo "Labels" (show $ labels $ blocks_Syn_Program' pSyn)
+  printInfo "Blocks" (show $ blocks_Syn_Program' pSyn)
+  printInfo "Flow" (show $ flow_Syn_Program' pSyn)
+  printInfo "InterFlow" (show $ interflow_Syn_Program' pSyn)
+  printInfo "Global Vars" (show $ globalVars_Syn_Program' pSyn)
+  let mf = analyze p'
+  printInfo "Result of the analysis" $ MF.fixpoint mf
+  printInfo "Extremal: " $ MF.extremalValue mf
+  --PP.renderIO_ 80 (PP.pp $ MF.fixpoint (analyze p'))
   putStrLn ""
 
 -- parse program

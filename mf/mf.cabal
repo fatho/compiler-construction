@@ -35,4 +35,7 @@ executable mf
                        uu-cco,
                        mtl,
                        transformers
+  ghc-prof-options:    -prof
+                       -fprof-auto
+                       -fprof-cafs
   hs-source-dirs:      src                     
