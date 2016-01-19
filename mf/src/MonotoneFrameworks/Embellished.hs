@@ -33,6 +33,9 @@ contextLattice l = Lattice
   , leq    = \a b -> Map.isSubmapOfBy (leq l) (getContext a) (getContext b)
   }
 
+collapse :: Lattice a -> Context c a -> a
+collapse lat = Map.foldl' (join lat) (bottom lat) . getContext 
+
 embellish :: (Ord c, Ord l) => (Lattice a -> Embellished c l a) -> MF l a -> MF l (Context c a)
 embellish emb mf = new where
   -- pass lattice to embellished part

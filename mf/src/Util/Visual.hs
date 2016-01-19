@@ -73,7 +73,8 @@ makeDot blocks flow attrs graphName = T.unlines graphLines where
           ]
   
   graphLines = 
-    ["digraph " <> graphName <> "{"]
+    ["digraph " <> graphName <> "{"
+    ,"overlap = false; splines = true;" ]
     ++ nodeDefs
     ++ edges
     ++ ["}"]

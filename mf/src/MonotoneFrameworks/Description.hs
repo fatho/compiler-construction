@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 module MonotoneFrameworks.Description where
 
 import qualified Data.Map.Strict as StrictMap
@@ -30,7 +31,7 @@ data Fixpoint l a = Fixpoint
   { contextValues :: StrictMap.Map l a
   , effectValues  :: StrictMap.Map l a
   }
-  deriving (Show, Read, Eq, Ord)
+  deriving (Show, Read, Eq, Ord, Functor)
 
 instance (PP.Printable l, PP.Printable a) => PP.Printable (Fixpoint l a) where
   pp (Fixpoint open closed) = 

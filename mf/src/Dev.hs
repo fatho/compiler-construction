@@ -30,10 +30,10 @@ ghci> run slv "fib"
 
 --}
 
-slv = MF.embellish (Context.callstrings 2) . SLV.stronglyLiveVariables
+slv = SLV.stronglyLiveVariables
 
 --cp :: Program' -> Analysis CP.VarMap
-cp  = MF.embellish (Context.callstrings 2) . CP.constantPropagation
+cp  = CP.constantPropagation
 
 run :: (PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
 run = runAnalysis'
@@ -53,9 +53,12 @@ runAnalysis' analyze programName = do
   printInfo "Flow" (show $ flow_Syn_Program' pSyn)
   printInfo "InterFlow" (show $ interflow_Syn_Program' pSyn)
   printInfo "Global Vars" (show $ globalVars_Syn_Program' pSyn)
-  let mf = analyze p'
-  printInfo "Result of the analysis" $ MF.maximumFixedPoint mf
-  printInfo "Extremal: " $ MF.extremalValue mf
+  let mf  = analyze p'
+      emf = MF.embellish (Context.callstrings 2) mf 
+      fp  = MF.maximumFixedPoint emf
+  printInfo "Result of the analysis" fp
+  printInfo "Collapsed results" (fmap (MF.collapse $ MF.lattice mf) fp)  
+  printInfo "Extremal" $ MF.extremalValue mf
   --PP.renderIO_ 80 (PP.pp $ MF.fixpoint (analyze p'))
   writeGraph programName (blocks_Syn_Program' pSyn) (MF.flow mf) (MF.extremalLabels mf)
 
