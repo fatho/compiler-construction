@@ -25,8 +25,8 @@ executable mf
                        Dev
                        AttributeGrammar
                        Analyses.ConstantPropagation
+                       MonotoneFrameworks.Embellished
                        MonotoneFrameworks.Lattice
-                       MonotoneFrameworks.Instance
                        MonotoneFrameworks.MaximumFixpoint
                        Util.Printing
   build-depends:       base >= 4 && < 5,
@@ -35,4 +35,7 @@ executable mf
                        uu-cco,
                        mtl,
                        transformers
+  ghc-prof-options:    -prof
+                       -fprof-auto
+                       -fprof-cafs
   hs-source-dirs:      src                     

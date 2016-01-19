@@ -4,13 +4,15 @@ import Control.Applicative
 import Control.Monad.Reader
 
 import qualified AttributeGrammar as AG
-import qualified MonotoneFrameworks.Lattice as Lattice
-import MonotoneFrameworks.Instance
+import MonotoneFrameworks.MaximumFixpoint
 import qualified Data.Map as Map
 import Data.Maybe
 import Data.Set as S
 
 type VarSet = S.Set AG.Var
+{-
+varSetLattice :: Lattice VarSet
+varSetLattice = Lattice S.empty S.union S.isSubsetOf
 
 -- | Returns for each block its transfer function.
 blockTransfer :: AG.Block -> [(AG.Label, VarSet -> VarSet)]
@@ -34,3 +36,4 @@ stronglyLiveVariables prog = inst where
     , extremalValue    = S.fromList $ AG.vars_Syn_Program' pSyn
     , labels           = AG.labels_Syn_Program' pSyn
     }
+-}

@@ -1,69 +1,97 @@
 {-# LANGUAGE RecordWildCards, BangPatterns #-}
 module MonotoneFrameworks.MaximumFixpoint where
 
-import qualified Data.Map.Strict as Map
+import           Data.Map (Map)
+import qualified Data.Map as Map
 import           Data.Maybe
+import AttributeGrammar (Flow(..), InterFlow(..))
 
-import           MonotoneFrameworks.Instance
-import           MonotoneFrameworks.Lattice (JoinSemiLattice)
-import qualified MonotoneFrameworks.Lattice as Lattice
-
+import Debug.Trace
+{-
 import qualified CCO.Printing as PP
 import qualified Util.Printing as UPP
-
-type Results l a = Map.Map l a
-
-data MFP l a = MFP
-  { mfpContextValues :: Results l a
-  , mfpEffectValues  :: Results l a
+-}
+data Lattice a = Lattice
+  { bottom :: a
+  , join   :: a -> a -> a
+  , leq    :: a -> a -> Bool
   }
-  deriving (Show)
 
-lookupValue :: (Ord l, JoinSemiLattice a) => l -> Results l a -> a
-lookupValue l res = fromMaybe Lattice.bottom $ Map.lookup l res
-
-mfp :: (Ord l, JoinSemiLattice a) => Instance l a -> MFP l a
-mfp Instance{..} = mfpResults where
-  -- initial results have extremal value for extremal labels and
-  -- bottom (represented by not being present in the map) at other labels
-  initialResults = Map.fromList [ (e, extremalValue) | e <- extremalLabels ]
+callFlow :: InterFlow l -> Flow l
+callFlow InterFlow{..} = Flow fromOuter toProc
   
-  -- build map from label to its outgoing flow
-  successorCache = Map.fromListWith (++) $ [ (l, [(l, l')]) | (l, l') <- transitions ]
-  -- returns the outgoing flow edges for a label
-  successorFlow l = fromMaybe [] $ Map.lookup l successorCache
-    
-  iterFun [] !res = res -- no more edges to process, we're done
-  iterFun ((l,l') : w) !res
-      -- if not inconsistent...
-      | not  (tval_l `Lattice.leq` val_l') =
-          -- incorporate result (the implementation exploits that bottom is the identity for join)
-          let res' = Map.insertWith Lattice.join l' tval_l res
-          -- and enlist successors for update
-          in iterFun (successorFlow l' ++ w) res'
-       
-      | otherwise = iterFun w res
-    where
-      f_l    = transferFunction l
-      val_l  = lookupValue l res  -- current value at l
-      val_l' = lookupValue l' res -- current value at l'
-      tval_l = f_l val_l          -- transferred value at l
+returnFlow :: InterFlow l -> Flow l
+returnFlow InterFlow{..} = Flow fromProc toOuter
 
-  -- performs all iterations until a fixpoint is reached
-  finalResults = iterFun transitions initialResults
+data MF l a = MF 
+  { lattice        :: Lattice a
+  , flow           :: [Flow l]
+  , interFlow      :: [InterFlow l]
+  , extremalLabels :: [l]
+  , extremalValue  :: a
+  , transfer       :: l -> (a -> a)
+  , interReturn    :: l -> l -> (a -> a -> a)
+  , labels         :: [l]
+  }
+
+data Fixpoint l a = Fixpoint 
+  { contextValues :: Map l a
+  , effectValues  :: Map l a
+  }
+  deriving (Show, Read, Eq, Ord)
+
   
-  -- final step of the algorithm
-  mfpResults = MFP
-    { mfpContextValues = finalResults
-    , mfpEffectValues  = Map.fromList 
-        [ (l, closed) | l <- labels
-                      , let open = lookupValue l finalResults
-                      , let closed = transferFunction l open
-                      , closed /= Lattice.bottom ]
-    }
+lookupMap :: (Show k, Ord k) => k -> Map k v -> v
+lookupMap k = Map.findWithDefault (error $ "key " ++ show k ++ " not found") k
+  
+fixpoint :: (Show l, Show a, Ord l) => MF l a ->  Fixpoint l a
+fixpoint mf = mfp where
+  -- bring lattice into scope
+  Lattice{..} = lattice mf
+  
+  -- maps from return point to the full inter-procedure flow
+  -- since call targets are static (meaning the block a return label belongs 
+  -- to always has called the same procedure), this is indeed a unique mapping
+  interReturnMap = Map.fromList [ ( toOuter ifl, ifl ) | ifl <- interFlow mf ]
+  
+  -- cache outgoing edges
+  outgoingMap = Map.fromListWith (++) $ [ ( from f, [f] ) | f <- flow mf ]
+  outgoing l  = Map.findWithDefault [] l outgoingMap 
+  -- additionally propagating to outgoing edges, changes to the call label of a block
+  -- affect the successors of the return label
+  propagateMap = Map.unionWith (++) outgoingMap $ Map.fromList
+    [ (fromOuter ifl, outgoing (toOuter ifl)) | ifl <- interFlow mf ]
+  propagate l = Map.findWithDefault [] l propagateMap
+  
+  -- 1. initial solution
+  initialSolution = Map.fromList
+    $  zip (labels mf) (repeat bottom)
+    ++ zip (extremalLabels mf) (repeat $ extremalValue mf) -- last values take precedence
 
-instance (PP.Printable l, PP.Printable a) => PP.Printable (MFP l a) where
-  pp (MFP open closed) = 
+  computeEffect lbl solution = case Map.lookup lbl interReturnMap of
+    -- not a return, just transfer context value at "from" label to effect value
+    Nothing -> transfer mf lbl (lookupMap lbl solution)
+    -- flowing out of return value: apply binary transfer function (lret == from f)
+    Just (InterFlow lcall lentry lexit lret) -> 
+      interReturn mf lcall lret (lookupMap lcall solution) (lookupMap lret solution)
+
+  iter []     solution = solution -- no more edges to process, we're done
+  iter (f:fs) solution =
+    let toCtxVal   = solution Map.! (to f)           -- context value of successor
+        fromEffVal = computeEffect (from f) solution
+    in if fromEffVal `leq` toCtxVal -- is effect consistent?
+         then iter fs solution
+         else let newToCtxVal = toCtxVal `join` fromEffVal
+              in iter (propagate (to f) ++ fs) (Map.insert (to f) newToCtxVal solution)
+  
+  -- run fixpoint iteration            
+  mfp' = iter (flow mf) initialSolution
+  
+  mfp = Fixpoint mfp' (Map.mapWithKey (\l _ -> computeEffect l mfp') mfp')
+
+{-
+instance (PP.Printable l, PP.Printable a) => PP.Printable (Fixpoint l a) where
+  pp (Fixpoint open closed) = 
       PP.text "Context Values: "
       PP.>-<
       PP.indent 2 (UPP.ppMap open PP.pp PP.pp)
@@ -71,3 +99,4 @@ instance (PP.Printable l, PP.Printable a) => PP.Printable (MFP l a) where
       PP.text "Effect Values: "
       PP.>-<
       PP.indent 2 (UPP.ppMap closed PP.pp PP.pp)
+      -}

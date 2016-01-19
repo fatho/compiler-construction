@@ -13,5 +13,5 @@ main = do
   putStrLn "Enter example name or leave empty to quit: "
   name <- getLine
   when (not $ null name) $ do
-    Dev.run Dev.slv name
+    Dev.run Dev.cp name
     main
