@@ -36,11 +36,13 @@ executable mf
                        MonotoneFrameworks.Embellished
                        MonotoneFrameworks.Lattice
                        Util.Printing
+                       Util.Visual
   build-depends:       base >= 4 && < 5,
                        containers == 0.5.*,
                        array == 0.5.*,
                        uu-cco,
                        mtl,
+                       text,
                        transformers
   ghc-prof-options:    -prof
                        -fprof-auto

@@ -6,6 +6,7 @@ optpragmas
 
 include "AG/Program.ag"
 include "AG/Labeling.ag"
+include "AG/Pretty.ag"
 include "AG/MonotoneFrameworks.ag"
 
 {
@@ -24,12 +25,15 @@ instance DefaultSynthesizable Program' where
 
 instance DefaultSynthesizable IExpr where
   type Synthesized IExpr = Syn_IExpr
-  synthesize e = wrap_IExpr (sem_IExpr e) Inh_IExpr
+  synthesize e = wrap_IExpr (sem_IExpr e) (Inh_IExpr 0) 
 
 instance DefaultSynthesizable BExpr where
   type Synthesized BExpr = Syn_BExpr
-  synthesize e = wrap_BExpr (sem_BExpr e) Inh_BExpr
-
+  synthesize e = wrap_BExpr (sem_BExpr e) (Inh_BExpr 0)
+  
+instance DefaultSynthesizable Expr where
+  type Synthesized Expr = Syn_Expr
+  synthesize e = wrap_Expr (sem_Expr e) (Inh_Expr 0)
 
 -- | Runs the attribute grammar for 'Program'.
 toLabeledProgram :: Program -> Program'

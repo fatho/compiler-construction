@@ -2,6 +2,7 @@ module Dev where
 
 import qualified Data.Map as M
 import qualified Data.List as L
+import Data.Monoid
 
 import AttributeGrammar
 import Lexer
@@ -14,6 +15,10 @@ import qualified Analyses.StronglyLiveVariables as SLV
 import qualified Analyses.Context as Context
 
 import qualified MonotoneFrameworks as MF
+
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+import qualified Util.Visual as Vis
 
 -- | An analysis is an instance of monotone frameworks yielding some result @a@ for each label.  
 type Analysis a = MF.MF Label a
@@ -52,7 +57,7 @@ runAnalysis' analyze programName = do
   printInfo "Result of the analysis" $ MF.maximumFixedPoint mf
   printInfo "Extremal: " $ MF.extremalValue mf
   --PP.renderIO_ 80 (PP.pp $ MF.fixpoint (analyze p'))
-  putStrLn ""
+  writeGraph programName (blocks_Syn_Program' pSyn) (MF.flow mf) (MF.extremalLabels mf)
 
 -- parse program
 
@@ -62,7 +67,7 @@ parse programName = do
   content <- readFile fileName
   return . happy . alex $ content
 
-
-
-
-
+writeGraph :: String -> [Block] -> [Flow Label] -> [Label] -> IO ()
+writeGraph programName blocks flow ex = do
+  let fileName = "./examples/"++programName++".dot"
+  TIO.writeFile fileName (Vis.makeDot blocks flow (Vis.highlightExtremal ex <> Vis.codeOnly) (T.pack programName))

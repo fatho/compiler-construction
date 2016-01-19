@@ -1,0 +1,69 @@
+imports
+{
+import Data.Bool
+}
+
+{
+type Precedence = Int
+}
+
+attr IExpr BExpr Expr
+    -- the minimum precedence that expression needs to have to omit parentheses  
+    inh precedence :: Precedence
+    -- pretty printed version of the expression
+    syn pretty     :: String
+
+sem IExpr
+    | IConst        lhs.pretty = show @val
+    | Var           lhs.pretty = @name
+    | Plus          lhs.pretty = precParens (@lhs.precedence > 6) (@left.pretty ++ " + " ++ @right.pretty)
+                    left.precedence = 6
+                    right.precedence = 6
+    | Minus         lhs.pretty = precParens (@lhs.precedence > 6) (@left.pretty ++ " - " ++ @right.pretty)
+                    left.precedence = 6
+                    right.precedence = 7
+    | Times         lhs.pretty = precParens (@lhs.precedence > 7) (@left.pretty ++ " * " ++ @right.pretty)
+                    left.precedence = 7
+                    right.precedence = 7
+    | Divide        lhs.pretty = precParens (@lhs.precedence > 7) (@left.pretty ++ " / " ++ @right.pretty)
+                    left.precedence = 7
+                    right.precedence = 8
+    -- | Deref         ptr  :: IExpr
+
+sem BExpr
+    | BConst        lhs.pretty = bool "true" "false" @val
+    | BVar          lhs.pretty = @name
+    | LessThan      lhs.pretty = precParens (@lhs.precedence > 4) (@left.pretty ++ " < " ++ @right.pretty)
+                    left.precedence = 5
+                    right.precedence = 5
+    | GreaterThan   lhs.pretty = precParens (@lhs.precedence > 4) (@left.pretty ++ " > " ++ @right.pretty)
+                    left.precedence = 5
+                    right.precedence = 5
+    | LessEqual     lhs.pretty = precParens (@lhs.precedence > 4) (@left.pretty ++ " <= " ++ @right.pretty)
+                    left.precedence = 5
+                    right.precedence = 5
+    | GreaterEqual  lhs.pretty = precParens (@lhs.precedence > 4) (@left.pretty ++ " >= " ++ @right.pretty)
+                    left.precedence = 5
+                    right.precedence = 5
+    | IEqual        lhs.pretty = precParens (@lhs.precedence > 4) (@left.pretty ++ " == " ++ @right.pretty)
+                    left.precedence = 5
+                    right.precedence = 5
+    | BEqual        lhs.pretty = precParens (@lhs.precedence > 4) (@left.pretty ++ " == " ++ @right.pretty)
+                    left.precedence = 5
+                    right.precedence = 5
+    | And           lhs.pretty = precParens (@lhs.precedence > 3) (@left.pretty ++ " and " ++ @right.pretty)
+                    left.precedence = 4
+                    right.precedence = 3
+    | Or            lhs.pretty = precParens (@lhs.precedence > 2) (@left.pretty ++ " || " ++ @right.pretty)
+                    left.precedence = 3
+                    right.precedence = 2
+    | Not           lhs.pretty = precParens (@lhs.precedence > 9) ("not " ++ @val.pretty)
+                    val.precedence = 9
+    
+{
+
+precParens :: Bool -> String -> String
+precParens True str = "(" ++ str ++ ")"
+precParens False str = str 
+
+}
