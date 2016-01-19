@@ -1,0 +1,39 @@
+
+attr Stat Proc Procs
+    chn label :: Label
+
+attr Program
+    syn prog :: Program'
+
+attr Proc Procs
+    syn procs use {++} {[]} :: Procs'
+
+attr Stat
+    syn stat  :: Stat'
+    
+sem Program 
+    | Program lhs.prog = Program' @procs.procs @stat.stat
+              procs.label = 0
+              stat.label = @procs.label
+    
+sem Stat
+    | Skip       
+      IfThenElse 
+      While      
+      IAssign    loc.labelgen :: uniqueref label
+   
+sem Stat
+    | Skip       lhs.stat = Skip'       @loc.labelgen
+    | IfThenElse lhs.stat = IfThenElse' @loc.labelgen @cond @stat1.stat @stat2.stat
+    | While      lhs.stat = While'      @loc.labelgen @cond @stat.stat
+    | IAssign    lhs.stat = IAssign'    @loc.labelgen @name @val
+    | Seq        lhs.stat = Seq'        @stat1.stat @stat2.stat
+    
+    | Call       loc.lblCall :: uniqueref label
+                 loc.lblReturn :: uniqueref label
+                 lhs.stat = Call' @loc.lblCall @loc.lblReturn @name @params @out
+
+sem Proc
+    | Proc  loc.lblEntry :: uniqueref label
+            loc.lblExit  :: uniqueref label
+            lhs.procs     = [ Proc' @loc.lblEntry @loc.lblExit  @name @inp @out @stat.stat ]

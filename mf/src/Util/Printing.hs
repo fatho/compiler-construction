@@ -13,14 +13,14 @@ ppMapping mapping = flat PP.>//< list where
   list = PP.above (map ppAssign mapping)
   ppAssign (k,v) = k PP.>#< PP.text "|->" PP.>#< v
 
-ppMap :: Map.Map a b -> (a -> PP.Doc) -> (b -> PP.Doc) -> PP.Doc
-ppMap m pa pb = ppMapping $ map (pa *** pb) $ Map.toList m
+ppMap :: (a -> PP.Doc) -> (b -> PP.Doc) -> Map.Map a b -> PP.Doc
+ppMap pa pb m = ppMapping $ map (pa *** pb) $ Map.toList m
 
 ppBoth :: (PP.Printable a, PP.Printable b) => (a, b) -> (PP.Doc, PP.Doc)
 ppBoth (x,y) = (PP.pp x, PP.pp y)
 
 instance PP.Printable [Char] where
-  pp = PP.text
+  pp = PP.showable
  
 instance Show a => PP.Printable (Set.Set a) where
   pp = PP.showable

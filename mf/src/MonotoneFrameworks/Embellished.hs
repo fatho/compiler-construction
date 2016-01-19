@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
 module MonotoneFrameworks.Embellished where
 
 import           Data.Map (Map)
@@ -6,10 +6,19 @@ import qualified Data.Map as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Maybe
-import AttributeGrammar (Flow(..), InterFlow(..))
-import MonotoneFrameworks.MaximumFixpoint
 
-type Context = Map
+import AttributeGrammar (Flow(..), InterFlow(..))
+import MonotoneFrameworks.Description
+import MonotoneFrameworks.Lattice
+
+import qualified CCO.Printing as PP
+import qualified Util.Printing as UPP
+
+newtype Context c a = Context { getContext :: Map c a }
+  deriving (Eq, Ord, Read, Show, Functor)
+
+instance (PP.Printable c, PP.Printable a) => PP.Printable (Context c a) where
+  pp = UPP.ppMap PP.pp PP.pp . getContext
 
 data Embellished c l a = Embellished
   { liftVal :: a -> Context c a
@@ -17,23 +26,12 @@ data Embellished c l a = Embellished
   , procOut :: l -> l -> (a -> a -> a) -> Context c a -> Context c a -> Context c a
   }
 
-type CallString l = [l]
-
 contextLattice :: Ord c => Lattice a -> Lattice (Context c a)
 contextLattice l = Lattice
-  { bottom = Map.empty
-  , join   = Map.unionWith (join l)
-  , leq    = Map.isSubmapOfBy (leq l)
+  { bottom = Context Map.empty
+  , join   = \a b -> Context $ Map.unionWith (join l) (getContext a) (getContext b)
+  , leq    = \a b -> Map.isSubmapOfBy (leq l) (getContext a) (getContext b)
   }
-
-callstrings :: Ord l => Int -> Lattice a -> Embellished (CallString l) l a
-callstrings k Lattice{..} = Embellished (Map.singleton []) pin pout where
-  pushCall l = take k . (l:)
-  pushContext l = Map.insert [] bottom . Map.mapKeysWith join (pushCall l)
-  lookup cs = fromMaybe bottom . Map.lookup cs
-
-  pin lblCall transfer = pushContext lblCall . fmap transfer
-  pout lblCall lblRet transfer ctxBefore ctxProc = Map.mapWithKey (\k v -> transfer v (lookup (pushCall lblCall k) ctxProc)) ctxBefore
 
 embellish :: (Ord c, Ord l) => (Lattice a -> Embellished c l a) -> MF l a -> MF l (Context c a)
 embellish emb mf = new where
@@ -41,7 +39,7 @@ embellish emb mf = new where
   Embellished{..} = emb (lattice mf)
 
   -- labels which flow into a procedure
-  toProc = Set.fromList $ map toOuter $ interFlow mf
+  toProc = Set.fromList $ map fromOuter $ interFlow mf
   
   -- wrap normal flow (wrap calls)
   embTransfer l val

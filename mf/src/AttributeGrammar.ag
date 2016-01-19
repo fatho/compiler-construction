@@ -1,2 +1,38 @@
+optpragmas
+{
+-- This goes verbatim above the module header
+{-# LANGUAGE TypeFamilies #-}
+}
+
 include "AG/Program.ag"
-include "AG/MonotoneFramework.ag"
+include "AG/Labeling.ag"
+include "AG/MonotoneFrameworks.ag"
+
+{
+
+class DefaultSynthesizable a where
+  type Synthesized a :: *
+  synthesize :: a -> Synthesized a
+
+instance DefaultSynthesizable Program where
+  type Synthesized Program = Syn_Program
+  synthesize prog = wrap_Program (sem_Program prog) Inh_Program
+
+instance DefaultSynthesizable Program' where
+  type Synthesized Program' = Syn_Program'
+  synthesize prog = wrap_Program' (sem_Program' prog) Inh_Program'
+
+instance DefaultSynthesizable IExpr where
+  type Synthesized IExpr = Syn_IExpr
+  synthesize e = wrap_IExpr (sem_IExpr e) Inh_IExpr
+
+instance DefaultSynthesizable BExpr where
+  type Synthesized BExpr = Syn_BExpr
+  synthesize e = wrap_BExpr (sem_BExpr e) Inh_BExpr
+
+
+-- | Runs the attribute grammar for 'Program'.
+toLabeledProgram :: Program -> Program'
+toLabeledProgram = prog_Syn_Program . synthesize
+
+}

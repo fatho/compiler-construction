@@ -6,57 +6,31 @@ import qualified Data.Set as S
 }
 
 {
-    
-  
 data Flow l = Flow { from :: l, to :: l }
   deriving (Eq, Ord, Show, Read)
 
 data InterFlow l = InterFlow { fromOuter, toProc, fromProc, toOuter :: l }
   deriving (Eq, Ord, Show, Read)
 
+-- | The call flow part of an interflow. 
+callFlow :: InterFlow l -> Flow l
+callFlow ifl = Flow (fromOuter ifl) (toProc ifl)
+  
+-- | The return flow part of an interflow.
+returnFlow :: InterFlow l -> Flow l
+returnFlow ifl = Flow (fromProc ifl) (toOuter ifl)
+
+-- | Reverse the flow direction
+reverseFlow :: Flows -> Flows
+reverseFlow = map (\(Flow x y) -> Flow y x)
+
+-- | Reverse the inter-flow direction
+reverseInterFlow :: InterFlows -> InterFlows
+reverseInterFlow = map (\(InterFlow a b c d) -> InterFlow d c b a)
+
 type Flows = [Flow Label]
 type InterFlows = [InterFlow Label]
 }
-
-attr Stat Proc Procs
-    chn label :: Label
-
-attr Program
-    syn prog :: Program'
-
-attr Proc Procs
-    syn procs use {++} {[]} :: Procs'
-
-attr Stat
-    syn stat  :: Stat'
-    
-sem Program 
-    | Program lhs.prog = Program' @procs.procs @stat.stat
-              procs.label = 0
-              stat.label = @procs.label
-    
-sem Stat
-    | Skip       
-      IfThenElse 
-      While      
-      IAssign    loc.labelgen :: uniqueref label
-   
-sem Stat
-    | Skip       lhs.stat = Skip'       @loc.labelgen
-    | IfThenElse lhs.stat = IfThenElse' @loc.labelgen @cond @stat1.stat @stat2.stat
-    | While      lhs.stat = While'      @loc.labelgen @cond @stat.stat
-    | IAssign    lhs.stat = IAssign'    @loc.labelgen @name @val
-    | Seq        lhs.stat = Seq'        @stat1.stat @stat2.stat
-    
-    | Call       loc.lblCall :: uniqueref label
-                 loc.lblReturn :: uniqueref label
-                 lhs.stat = Call' @loc.lblCall @loc.lblReturn @name @params @out
-
-sem Proc
-    | Proc  loc.lblEntry :: uniqueref label
-            loc.lblExit  :: uniqueref label
-            lhs.procs     = [ Proc' @loc.lblEntry @loc.lblExit  @name @inp @out @stat.stat ]
-
   
 attr Program' Stat'
     syn init   :: Label
@@ -70,9 +44,18 @@ attr Program' Stat' Procs' Proc'
 attr Stat' Procs' Proc'
     inh procs :: Procs'
 
-attr Program' Stat' Exprs Expr IExpr BExpr
-    syn globalVars  use {S.union} {S.empty} :: {S.Set Var}
-    
+attr Program'
+    syn globalVars :: {S.Set Var}
+
+attr Procs' Proc'
+    inh globalVars :: {S.Set Var}
+
+attr Proc'
+    syn localVars  :: {S.Set Var} 
+
+attr Stat' Exprs Expr IExpr BExpr
+    syn vars use {S.union} {S.empty} :: {S.Set Var}
+
 {
 data Block = BBlock         Label     BExpr
            | SkipBlock      Label 
@@ -85,8 +68,16 @@ data Block = BBlock         Label     BExpr
 }
 
 sem Program'
-    | Program' stat.procs = @procs.self
-               procs.procs = @procs.self
+    | Program' stat. procs      = @procs.self
+               procs.procs      = @procs.self
+               procs.globalVars = @stat.vars
+               lhs  .globalVars = @stat.vars
+
+sem Proc'
+    -- all variables used in a procedure that are not global variables
+    -- or 
+    | Proc'     loc.argVars   = S.fromList (@out : @inp)
+                lhs.localVars  = S.union (@stat.vars S.\\ @lhs.globalVars) @argVars 
 
 sem Stat'
     | Skip'       lhs.init = @label
@@ -105,31 +96,15 @@ sem Stat'
     | Seq'        lhs.finals = @stat2.finals
     
 sem Stat'
-    | Skip'       loc.blocks = [SkipBlock @label]
-    | IfThenElse' loc.blocks = (BBlock @labelc @cond.self) : @stat1.blocks ++ @stat2.blocks
-    | While'      loc.blocks = (BBlock @labelc @cond.self) : @stat.blocks
-    | IAssign'    loc.blocks = [IAssignBlock @label @name @val.self]
-    | Call'       loc.blocks = [CallBlock @labelCall @labelReturn @name @params.self @out]
-    | Seq'        loc.blocks = @stat1.blocks ++ @stat2.blocks
+    | Skip'       lhs.blocks = [SkipBlock @label]
+    | IfThenElse' lhs.blocks = (BBlock @labelc @cond.self) : @stat1.blocks ++ @stat2.blocks
+    | While'      lhs.blocks = (BBlock @labelc @cond.self) : @stat.blocks
+    | IAssign'    lhs.blocks = [IAssignBlock @label @name @val.self]
+    | Call'       lhs.blocks = [CallBlock @labelCall @labelReturn @name @params.self @out]
+    | Seq'        lhs.blocks = @stat1.blocks ++ @stat2.blocks
 
 sem Proc'
-    | Proc'       loc.blocks = [ ProcBeginBlock @labelEntry, ProcEndBlock @labelExit ] ++ @stat.blocks
-                  lhs.blocks = @blocks
-                  lhs.labels = concatMap labelsFromBlock @blocks ++ @stat.labels
-
-sem Stat'
-    | Skip'       
-      IfThenElse' 
-      While'      
-      IAssign'    
-      Seq'        lhs.blocks = @blocks
-    
-sem Stat'
-    | Skip' 
-      IfThenElse' 
-      While' 
-      IAssign' 
-      Seq'        lhs.labels = concatMap labelsFromBlock @blocks
+    | Proc'       lhs.blocks = [ ProcBeginBlock @labelEntry, ProcEndBlock @labelExit ] ++ @stat.blocks
 
 sem Stat'
     | Skip'       lhs.flow = []
@@ -152,21 +127,18 @@ sem Proc'
     
 
 sem Stat'
-    | IAssign' lhs.globalVars = S.singleton @name
-    | Call'    lhs.globalVars = S.insert @out @params.globalVars   
+    | IAssign' lhs.vars = S.singleton @name
+    | Call'    lhs.vars = S.insert @out @params.vars   
     
 sem IExpr
-    | Var lhs.globalVars = S.singleton @name
+    | Var lhs.vars = S.singleton @name
     
---sem BExpr
---    | BVar lhs.globalVars = [@name]
+sem BExpr
+    | BVar lhs.vars = S.singleton @name
         
 {
 nextUnique :: Int -> (Int, Int)
 nextUnique u = (u+1, u)
-
-reverseFlow :: Flows -> Flows
-reverseFlow = map (\(Flow x y) -> (Flow y x))
 
 labelsFromBlock :: Block -> [Label]
 labelsFromBlock (BBlock       label _)   = [label]
@@ -184,12 +156,4 @@ findProc :: Var -> Procs' -> Proc'
 findProc v ps = fromMaybe (error $ "procedure not found: " ++ v) $
   find (\p -> name_Proc'_Proc' p == v) ps
 
--- | Runs the attribute grammar for 'Program'.
-toLabeledProgram :: Program -> Program'
-toLabeledProgram prog = 
-    prog_Syn_Program $ wrap_Program (sem_Program prog) Inh_Program
-
--- | calculate synthesized attributes for programs, yielding all the data required for monotone frameworks
-programSyn :: Program' -> Syn_Program' 
-programSyn prog = wrap_Program' (sem_Program' prog) Inh_Program'
 }

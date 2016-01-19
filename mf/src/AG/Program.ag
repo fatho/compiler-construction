@@ -101,29 +101,11 @@ type Procs' = [Proc']
 type Exprs = [Expr]
 
 {
-varSetIExpr :: IExpr -> S.Set Var -> S.Set Var
-varSetIExpr (IConst v)   vs = vs
-varSetIExpr (Var name)   vs = S.insert name vs
-varSetIExpr (Plus l r)   vs = varSetIExpr l vs `S.union` varSetIExpr r vs 
-varSetIExpr (Minus l r)  vs = varSetIExpr l vs `S.union` varSetIExpr r vs 
-varSetIExpr (Times l r)  vs = varSetIExpr l vs `S.union` varSetIExpr r vs 
-varSetIExpr (Divide l r) vs = varSetIExpr l vs `S.union` varSetIExpr r vs 
-varSetIExpr (Deref ptr)  vs = error "Deref not implemented"
-
-varSetBExpr :: BExpr -> S.Set Var -> S.Set Var
-varSetBExpr (BConst v)         vs = vs        
-varSetBExpr (BVar name)        vs = S.insert name vs        
-varSetBExpr (LessThan l r)     vs = varSetIExpr l vs `S.union` varSetIExpr r vs            
-varSetBExpr (GreaterThan l r)  vs = varSetIExpr l vs `S.union` varSetIExpr r vs            
-varSetBExpr (LessEqual l r)    vs = varSetIExpr l vs `S.union` varSetIExpr r vs
-varSetBExpr (GreaterEqual l r) vs = varSetIExpr l vs `S.union` varSetIExpr r vs            
-varSetBExpr (IEqual l r)       vs = varSetIExpr l vs `S.union` varSetIExpr r vs        
-varSetBExpr (BEqual l r)       vs = varSetBExpr l vs `S.union` varSetBExpr r vs     
-varSetBExpr (And l r)          vs = varSetBExpr l vs `S.union` varSetBExpr r vs     
-varSetBExpr (Or l r)           vs = varSetBExpr l vs `S.union` varSetBExpr r vs 
-varSetBExpr (Not x)            vs = varSetBExpr x vs
-
--- | Evaluates an 'IExpr' in an arbitrary numerical context. 
+    
+-- | Evaluates an 'IExpr' in an arbitrary numerical context.
+-- We need this to be polymorphic, which is the reason why evaluation is
+-- not implemented as attribute grammar.
+-- AGs apparently support polymorphic Nonterminals, but no polymorphic attributes. 
 evalIExpr :: (Integral a) => IExpr -> (Var -> a) -> a
 evalIExpr e env = go e where
   go (IConst v) = fromIntegral v

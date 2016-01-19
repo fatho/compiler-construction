@@ -1,7 +1,11 @@
 module MonotoneFrameworks
-  ( module Reexport
+  ( module MonotoneFrameworks.Algorithm
+  , module MonotoneFrameworks.Description
+  , module MonotoneFrameworks.Embellished
+  , module MonotoneFrameworks.Lattice
   ) where
   
-import MonotoneFrameworks.Embellished as Reexport
---import MonotoneFrameworks.Lattice as Reexport
-import MonotoneFrameworks.MaximumFixpoint as Reexport
+import MonotoneFrameworks.Algorithm
+import MonotoneFrameworks.Description
+import MonotoneFrameworks.Embellished
+import MonotoneFrameworks.Lattice

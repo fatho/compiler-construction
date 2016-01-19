@@ -15,6 +15,9 @@ extra-source-files:    Makefile,
                        examples/cp1.c,
                        examples/fib.c,
                        src/AttributeGrammar.ag
+                       src/AG/Labeling.ag
+                       src/AG/MonotoneFrameworks.ag
+                       src/AG/Program.ag
                        src/Lexer.x
                        src/Parser.y
 
@@ -25,9 +28,13 @@ executable mf
                        Dev
                        AttributeGrammar
                        Analyses.ConstantPropagation
+                       Analyses.StronglyLiveVariables
+                       Analyses.Context
+                       Analyses.Context.Callstrings
+                       MonotoneFrameworks.Algorithm
+                       MonotoneFrameworks.Description
                        MonotoneFrameworks.Embellished
                        MonotoneFrameworks.Lattice
-                       MonotoneFrameworks.MaximumFixpoint
                        Util.Printing
   build-depends:       base >= 4 && < 5,
                        containers == 0.5.*,
