@@ -72,7 +72,7 @@ data Block = BBlock         Label     BExpr
            | IAssignBlock   Label Var IExpr
            | ProcBeginBlock Label
            | ProcEndBlock   Label
-           | CallBlock      Label     Label
+           | CallBlock      Label     Label Var Exprs Var
         -- | BAssignBlock Label Var {BExpr}
   deriving (Eq, Show)
 }
@@ -102,7 +102,7 @@ sem Stat'
     | IfThenElse' loc.blocks = (BBlock @labelc @cond.self) : @stat1.blocks ++ @stat2.blocks
     | While'      loc.blocks = (BBlock @labelc @cond.self) : @stat.blocks
     | IAssign'    loc.blocks = [IAssignBlock @label @name @val.self]
-    | Call'       loc.blocks = [CallBlock @labelCall @labelReturn]
+    | Call'       loc.blocks = [CallBlock @labelCall @labelReturn @name @params @out]
     | Seq'        loc.blocks = @stat1.blocks ++ @stat2.blocks
 
 sem Proc'
@@ -157,7 +157,7 @@ labelsFromBlock :: Block -> [Label]
 labelsFromBlock (BBlock       label _)   = [label]
 labelsFromBlock (SkipBlock    label)     = [label]
 labelsFromBlock (IAssignBlock label _ _) = [label]
-labelsFromBlock (CallBlock lCall lRet)   = [lCall, lRet]
+labelsFromBlock (CallBlock lCall lRet _ _ _)   = [lCall, lRet]
 labelsFromBlock (ProcBeginBlock label)   = [label]
 labelsFromBlock (ProcEndBlock   label)   = [label]
 

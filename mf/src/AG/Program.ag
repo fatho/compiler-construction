@@ -50,7 +50,7 @@ data Stat'
   | Skip'          label :: Label
   | IfThenElse'    labelc :: Label       cond  :: BExpr      stat1  :: Stat'     stat2 :: Stat'
   | While'         labelc :: Label       cond  :: BExpr      stat   :: Stat'
-  | Call'          labelCall :: Label    labelReturn :: Label  name :: Var     params :: Exprs    out :: String
+  | Call'          labelCall :: Label    labelReturn :: Label  name :: Var     params :: Exprs    out :: Var
   | IAssign'       label :: Label        name :: Var     val    :: IExpr
   | BAssign'       label :: Label        name :: Var     val    :: BExpr
   | Seq'           stat1 :: Stat'        stat2  :: Stat'
