@@ -4,14 +4,16 @@ begin
     z := 20;
     r := 0;
     
-    while (x < z)
+    while x < z do
     {
         x := x + 1;
         r := x;     
     }
     
-    if (r > z)
+    if (r > z) then
         r := y;
     else 
-        r := 0;        
+    {
+        r := 0; 
+    }        
 end

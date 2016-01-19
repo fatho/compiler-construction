@@ -6,17 +6,16 @@ begin
     
     counter := 0;
     xres := 0;
-    while (xres < x)
+    while xres < x do
     {
         xres := xres + 2;
         counter := xres + 1;
     }
     
     result := 0;
-    if (counter == z)
+    if counter == z then
         result := 1000;
     else
         result := 0;
-    
-    result := 20;
+
 end
