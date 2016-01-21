@@ -1,3 +1,5 @@
+{- | Defines the interface for lattices and provides some basic lattice implementations.
+-}
 {-# LANGUAGE GeneralizedNewtypeDeriving, DeriveFunctor #-}
 module MonotoneFrameworks.Lattice where
     
@@ -12,6 +14,12 @@ import qualified CCO.Printing as PP
 import qualified Util.Printing as UPP
 
 -- | A lattice that can be explicitly passed around.
+-- We decided against modelling lattices as a type classe because sometimes
+-- the concrete value for 'bottom' depends on the previous program flow. In the
+-- available expression analysis for example, bottom is the set of all non-trivial
+-- expressions contained in the analysed program.
+-- Getting this kind of dynamic information into a type class is not possible in Haskell, or
+-- at least rather inconvenient. 
 data Lattice a = Lattice
   { bottom :: a
     -- ^ the bottom value in the lattice.
@@ -23,20 +31,25 @@ data Lattice a = Lattice
     -- overriden by a more efficient implementation if necessary.
   }
 
+-- | A default implementation for 'leq' depending on an implementation for 'join'.
 defaultLeq :: Eq a => (a -> a -> a) -> (a -> a -> Bool)
 defaultLeq ljoin x y = ljoin x y == y
 
+-- | The lattice of sets with union.
 setUnion :: Ord a => Lattice (Set.Set a)
 setUnion = Lattice Set.empty Set.union Set.isSubsetOf
 
+-- | The lattice of sets with intersection for some given bottom set. 
 setIntersection :: Ord a => Set.Set a -> Lattice (Set.Set a)
 setIntersection universe = Lattice universe Set.intersection (flip Set.isSubsetOf)
 
+-- | The lattice of strict maps with union.
 strictMapUnion :: Ord k => Lattice a -> Lattice (StrictMap.Map k a)
 strictMapUnion inner = Lattice StrictMap.empty 
                                (StrictMap.unionWith (join inner))
                                (StrictMap.isSubmapOfBy (leq inner))
 
+-- | The lattice of strict maps with intersection for some given bottom map. 
 strictMapIntersection :: Ord k => Lattice a -> Lattice (StrictMap.Map k a)
 strictMapIntersection inner = 
   Lattice StrictMap.empty 
@@ -45,11 +58,12 @@ strictMapIntersection inner =
 
 -- | Lifts a flat datatype into a lattice.
 data Lifted a
-  = Bottom
-  | Value !a
-  | Top
+  = Bottom   -- ^ an artificial bottom value less than every other value in this type
+  | Value !a -- ^ all values of the inner type are on the same level in the lattice, i.e. their order is incomparable
+  | Top      -- ^ an artificial top value larger than every other value in this type
   deriving (Eq, Ord, Show, Read, Functor)
 
+-- | A lifted lattice from a regular data type. The equality constraint is needed for joining.
 lifted :: Eq a => Lattice (Lifted a)
 lifted = Lattice Bottom liftedJoin (defaultLeq liftedJoin) where
   liftedJoin Bottom    x         = x
@@ -57,6 +71,8 @@ lifted = Lattice Bottom liftedJoin (defaultLeq liftedJoin) where
   liftedJoin Top       _         = Top
   liftedJoin _         Top       = Top
   liftedJoin (Value a) (Value b) = if a == b then Value a else Top
+
+-- Some useful instances when working with lifted values:
 
 instance Applicative Lifted where
   pure = Value

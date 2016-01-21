@@ -1,14 +1,34 @@
+{-
+In this attribute grammar, values needed for monotone frameworks are computed.
+-}
+
 imports
 {
 import Data.Maybe
 import Data.List (find)
-import qualified Data.Set as S
+import qualified Data.Set as Set
+import qualified Data.Map.Strict as Map
+import qualified Data.Foldable as Foldable
 }
 
 {
+    
+-- | Type of code blocks
+data Block 
+    = BBlock         Label     BExpr  -- ^ boolean expression
+    | SkipBlock      Label            -- ^ skip instruction
+    | IAssignBlock   Label Var IExpr  -- ^ integer assignment
+    | ProcBeginBlock Label            -- ^ procedure entry
+    | ProcEndBlock   Label            -- ^ procedure exit
+    | CallBlock      Label     Label Var Exprs Var -- ^ procedure call
+    -- | BAssignBlock Label Var {BExpr}
+  deriving (Eq, Show)
+    
+-- | A directed flow edge
 data Flow l = Flow { from :: l, to :: l }
   deriving (Eq, Ord, Show, Read)
 
+-- | A directed interflow
 data InterFlow l = InterFlow { fromOuter, toProc, fromProc, toOuter :: l }
   deriving (Eq, Ord, Show, Read)
 
@@ -28,56 +48,61 @@ reverseFlow = map (\(Flow x y) -> Flow y x)
 reverseInterFlow :: InterFlows -> InterFlows
 reverseInterFlow = map (\(InterFlow a b c d) -> InterFlow d c b a)
 
+-- | List of flows
 type Flows = [Flow Label]
+-- | List of interflows
 type InterFlows = [InterFlow Label]
+
+-- | Describes the scope (including the variables defined there) to which a label belongs
+data Scope 
+    = Global    (Set.Set Var) -- ^ global scope
+    | Local Var (Set.Set Var) -- ^ local scope of procedure
 }
-  
+
 attr Program' Stat'
+    -- | Initial label of a program or statement
     syn init   :: Label
+    -- | Final labels of a program or statement
     syn finals use {++} {[]} :: {[Label]}
 
 attr Program' Stat' Procs' Proc'
-    syn blocks    use {++} {[]} :: {[Block]}
-    syn flow      use {++} {[]} :: {Flows}
-    syn interflow use {++} {[]} :: {InterFlows} 
+    syn blocks    use {++} {[]} :: {[Block]}     -- all blocks
+    syn flow      use {++} {[]} :: {Flows}       -- all flows
+    syn interflow use {++} {[]} :: {InterFlows}  -- all interflows
     
 attr Stat' Procs' Proc'
+    -- procedure environment, used for looking up details about a procedure at call sites.
     inh procs :: Procs'
 
 attr Program'
-    syn globalVars :: {S.Set Var}
+    -- computes the global variables in a program
+    syn globalVars :: {Set.Set Var}
 
 attr Procs' Proc'
-    inh globalVars :: {S.Set Var}
+    -- provides information about the global variables to procedures
+    inh globalVars :: {Set.Set Var}
 
 attr Proc'
-    syn localVars  :: {S.Set Var} 
+    -- computes the local variables of a procedure. local variables are those that are not global.
+    -- argument variables shadow eventual global variables of the same name.
+    syn localVars  :: {Set.Set Var} 
 
 attr Stat' Exprs Expr IExpr BExpr
-    syn vars use {S.union} {S.empty} :: {S.Set Var}
+    -- returns the set of variables used in the respective syntactic construct
+    syn vars use {Set.union} {Set.empty} :: {Set.Set Var}
 
-{
-data Block = BBlock         Label     BExpr
-           | SkipBlock      Label 
-           | IAssignBlock   Label Var IExpr
-           | ProcBeginBlock Label
-           | ProcEndBlock   Label
-           | CallBlock      Label     Label Var Exprs Var
-        -- | BAssignBlock Label Var {BExpr}
-  deriving (Eq, Show)
-}
+attr Program' Procs' Proc'
+    -- scope in which a label is defined (global or local to a procedure)
+    syn labelScope use {Map.union} {Map.empty} :: {Map.Map Label Scope}
 
 sem Program'
     | Program' stat. procs      = @procs.self
                procs.procs      = @procs.self
-               procs.globalVars = @stat.vars
-               lhs  .globalVars = @stat.vars
 
-sem Proc'
-    -- all variables used in a procedure that are not global variables
-    -- or 
-    | Proc'     loc.argVars   = S.fromList (@out : @inp)
-                lhs.localVars  = S.union (@stat.vars S.\\ @lhs.globalVars) @argVars 
+
+----------------------------------------------------------------------------------------
+-- Init
+----------------------------------------------------------------------------------------
 
 sem Stat'
     | Skip'       lhs.init = @label
@@ -87,6 +112,10 @@ sem Stat'
     | Call'       lhs.init = @labelCall
     | Seq'        lhs.init = @stat1.init
     
+----------------------------------------------------------------------------------------
+-- Finals
+----------------------------------------------------------------------------------------
+
 sem Stat'
     | Skip'       lhs.finals = [@label]
     | IfThenElse' lhs.finals = @stat1.finals ++ @stat2.finals
@@ -94,7 +123,11 @@ sem Stat'
     | IAssign'    lhs.finals = [@label]
     | Call'       lhs.finals = [@labelReturn]
     | Seq'        lhs.finals = @stat2.finals
-    
+
+----------------------------------------------------------------------------------------
+-- Blocks
+----------------------------------------------------------------------------------------
+
 sem Stat'
     | Skip'       lhs.blocks = [SkipBlock @label]
     | IfThenElse' lhs.blocks = (BBlock @labelc @cond.self) : @stat1.blocks ++ @stat2.blocks
@@ -105,6 +138,10 @@ sem Stat'
 
 sem Proc'
     | Proc'       lhs.blocks = [ ProcBeginBlock @labelEntry, ProcEndBlock @labelExit ] ++ @stat.blocks
+
+----------------------------------------------------------------------------------------
+-- Flow
+----------------------------------------------------------------------------------------
 
 sem Stat'
     | Skip'       lhs.flow = []
@@ -126,20 +163,48 @@ sem Proc'
                               ++ @stat.flow
     
 
+----------------------------------------------------------------------------------------
+-- Variables
+----------------------------------------------------------------------------------------
+
 sem Stat'
-    | IAssign' lhs.vars = S.singleton @name
-    | Call'    lhs.vars = S.insert @out @params.vars   
+    | IAssign' lhs.vars = Set.singleton @name
+    | Call'    lhs.vars = Set.insert @out @params.vars   
     
 sem IExpr
-    | Var lhs.vars = S.singleton @name
+    | Var lhs.vars = Set.singleton @name
     
 sem BExpr
-    | BVar lhs.vars = S.singleton @name
+    | BVar lhs.vars = Set.singleton @name
         
+sem Program'
+    | Program' lhs  .globalVars = @stat.vars
+               procs.globalVars = @stat.vars
+
+sem Proc'
+    -- all variables used in a procedure that are not global variables
+    -- arguments shadow global variables
+    | Proc'     loc.argVars   = Set.fromList (@out : @inp) 
+                loc.localVars = Set.union (@stat.vars Set.\\ @lhs.globalVars) @argVars
+                lhs.localVars = @loc.localVars  
+
+----------------------------------------------------------------------------------------
+-- Scope
+----------------------------------------------------------------------------------------
+
+sem Program'
+    | Program' loc.globLblScope = Map.fromList $ zip (labels @stat.blocks) (repeat $ Global @stat.vars)
+               lhs.labelScope = Map.union @loc.globLblScope @procs.labelScope
+
+sem Proc'
+    | Proc'    lhs.labelScope = Map.fromList $ zip (labels @stat.blocks) (repeat $ Local @name @loc.localVars)
+
 {
+-- | Generate next unqiue label. 
 nextUnique :: Int -> (Int, Int)
 nextUnique u = (u+1, u)
 
+-- | Returns all the labels in a block.
 labelsFromBlock :: Block -> [Label]
 labelsFromBlock (BBlock       label _)   = [label]
 labelsFromBlock (SkipBlock    label)     = [label]
@@ -148,8 +213,9 @@ labelsFromBlock (CallBlock lCall lRet _ _ _)   = [lCall, lRet]
 labelsFromBlock (ProcBeginBlock label)   = [label]
 labelsFromBlock (ProcEndBlock   label)   = [label]
 
-labels :: [Block] -> [Label]
-labels = concatMap labelsFromBlock
+-- | Returns all the labels in a collection of blocks
+labels :: Foldable.Foldable t => t Block -> [Label]
+labels = Foldable.foldMap labelsFromBlock
 
 -- | Finds a procedure by its name.
 findProc :: Var -> Procs' -> Proc'

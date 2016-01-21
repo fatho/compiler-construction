@@ -1,3 +1,7 @@
+{-
+This attribute grammar implements pretty-printing for expression, as needed for generating nice output.
+-}
+
 imports
 {
 import Data.Bool
@@ -8,10 +12,13 @@ type Precedence = Int
 }
 
 attr IExpr BExpr Expr
-    -- the minimum precedence that expression needs to have to omit parentheses  
+    -- the minimum precedence that expression needs to have to omit parentheses
     inh precedence :: Precedence
     -- pretty printed version of the expression
     syn pretty     :: String
+
+-- the precedences used below are the same as Haskell uses them, 
+-- the relative order coincides with the ones used for parsing the "while" language
 
 sem IExpr
     | IConst        lhs.pretty = show @val
@@ -62,6 +69,7 @@ sem BExpr
     
 {
 
+-- | Encloses the second argument in parentheses if the first argument is true.
 precParens :: Bool -> String -> String
 precParens True str = "(" ++ str ++ ")"
 precParens False str = str 

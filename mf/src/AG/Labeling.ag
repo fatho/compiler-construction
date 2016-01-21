@@ -1,18 +1,26 @@
+{-
+This attribute grammar is responsible for attaching labels to a given source program.
+-}
 
 attr Stat Proc Procs
+    -- used as counter for generating unique labels
     chn label :: Label
 
 attr Program
+    -- resulting labeled program
     syn prog :: Program'
 
 attr Proc Procs
+    -- resulting labeled procedures
     syn procs use {++} {[]} :: Procs'
 
 attr Stat
+    -- resulting labeled statement
     syn stat  :: Stat'
     
 sem Program 
     | Program lhs.prog = Program' @procs.procs @stat.stat
+              -- start labeling procs with label 0, then the main statements 
               procs.label = 0
               stat.label = @procs.label
     

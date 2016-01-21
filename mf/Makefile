@@ -38,4 +38,7 @@ clean:
 run: haskell
 	cabal run -- +RTS -xc
 
+repl: haskell
+	cabal repl
+
 .PHONY: default all clean generate haskell

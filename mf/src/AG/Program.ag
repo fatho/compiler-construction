@@ -1,15 +1,18 @@
+{-
+Except for some additions, this file is roughly the same as the one distributed with the assignment.
+-}
+
 imports
 {
-import qualified Data.Map as M
 import qualified Data.Maybe as Maybe
-import qualified Data.List as L
-import qualified Data.Set as S
 
 import CCO.Printing
 }
 
 {
+-- | Type used for labels
 type Label = Int
+-- | Type used for identifiers
 type Var = String
 }
 

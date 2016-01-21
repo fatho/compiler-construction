@@ -11,8 +11,12 @@ include "AG/MonotoneFrameworks.ag"
 
 {
 
+-- | A class to simplify the synthesizing of attributes for inputs
+-- without inherited attributes or where there is a sensible default value for those.
 class DefaultSynthesizable a where
+  -- | The type resulting from synthesizing.
   type Synthesized a :: *
+  -- | Synthesizes the attributes.
   synthesize :: a -> Synthesized a
 
 instance DefaultSynthesizable Program where

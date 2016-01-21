@@ -1,3 +1,5 @@
+{- | Implements the Maximum Fixed Point (MFP) algorithm for monotone frameworks.
+-}
 {-# LANGUAGE RecordWildCards, BangPatterns #-}
 module MonotoneFrameworks.Algorithm where
 
@@ -12,6 +14,7 @@ import MonotoneFrameworks.Lattice
 
 import Debug.Trace
 
+-- | Takes a monotone framework and returns the corresponding fixpoint.
 maximumFixedPoint :: (Show l, Ord l) => MF l a ->  Fixpoint l a
 maximumFixedPoint mf = mfp where
   -- bring lattice into scope

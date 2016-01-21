@@ -56,11 +56,11 @@ runAnalysis' analyze programName = do
   let mf  = analyze p'
       emf = MF.embellish (Context.callstrings 2) mf 
       fp  = MF.maximumFixedPoint emf
+      collapsedFp = fmap (MF.collapse $ MF.lattice mf) fp
   printInfo "Result of the analysis" fp
-  printInfo "Collapsed results" (fmap (MF.collapse $ MF.lattice mf) fp)  
+  printInfo "Collapsed results" collapsedFp  
   printInfo "Extremal" $ MF.extremalValue mf
-  --PP.renderIO_ 80 (PP.pp $ MF.fixpoint (analyze p'))
-  writeGraph programName (blocks_Syn_Program' pSyn) (MF.flow mf) (MF.extremalLabels mf)
+  writeGraph programName (blocks_Syn_Program' pSyn) (MF.flow mf) (MF.extremalLabels mf) collapsedFp
 
 -- parse program
 
@@ -70,7 +70,7 @@ parse programName = do
   content <- readFile fileName
   return . happy . alex $ content
 
-writeGraph :: String -> [Block] -> [Flow Label] -> [Label] -> IO ()
-writeGraph programName blocks flow ex = do
+writeGraph :: (PP.Printable a) => String -> [Block] -> [Flow Label] -> [Label] -> MF.Fixpoint Label a -> IO ()
+writeGraph programName blocks flow ex fp = do
   let fileName = "./examples/"++programName++".dot"
-  TIO.writeFile fileName (Vis.makeDot blocks flow (Vis.highlightExtremal ex <> Vis.codeOnly) (T.pack programName))
+  TIO.writeFile fileName (Vis.makeDot blocks flow (Vis.highlightExtremal ex <> Vis.codeWithLabels >>= Vis.withResults fp) (T.pack programName))
