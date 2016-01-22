@@ -25,18 +25,30 @@ sem Program
               stat.label = @procs.label
     
 sem Stat
-    | Skip       
+    | BAssign
+      Malloc
+      Free
+      RefAssign
+      Continue
+      Break
+      Skip       
       IfThenElse 
       While      
       IAssign    loc.labelgen :: uniqueref label
-   
+
 sem Stat
     | Skip       lhs.stat = Skip'       @loc.labelgen
     | IfThenElse lhs.stat = IfThenElse' @loc.labelgen @cond @stat1.stat @stat2.stat
     | While      lhs.stat = While'      @loc.labelgen @cond @stat.stat
     | IAssign    lhs.stat = IAssign'    @loc.labelgen @name @val
     | Seq        lhs.stat = Seq'        @stat1.stat @stat2.stat
-    
+    | BAssign    lhs.stat = BAssign'    @loc.labelgen @name @val
+    | Malloc     lhs.stat = Malloc'     @loc.labelgen @name @size
+    | RefAssign  lhs.stat = RefAssign'  @loc.labelgen @ptr  @val
+    | Free       lhs.stat = Free'       @loc.labelgen @ptr
+    | Continue   lhs.stat = Continue'   @loc.labelgen
+    | Break      lhs.stat = Break'      @loc.labelgen
+
     | Call       loc.lblCall :: uniqueref label
                  loc.lblReturn :: uniqueref label
                  lhs.stat = Call' @loc.lblCall @loc.lblReturn @name @params @out

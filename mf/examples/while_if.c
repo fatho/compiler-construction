@@ -7,7 +7,7 @@ begin
     while x < z do
     {
         x := x + 1;
-        r := x;     
+        r := x;
     }
     
     if (r > z) then

@@ -15,13 +15,18 @@ import qualified Data.Foldable as Foldable
     
 -- | Type of code blocks
 data Block 
-    = BBlock         Label     BExpr  -- ^ boolean expression
-    | SkipBlock      Label            -- ^ skip instruction
-    | IAssignBlock   Label Var IExpr  -- ^ integer assignment
-    | ProcBeginBlock Label            -- ^ procedure entry
-    | ProcEndBlock   Label            -- ^ procedure exit
+    = BBlock         Label     BExpr -- ^ boolean expression
+    | SkipBlock      Label           -- ^ skip instruction
+    | IAssignBlock   Label Var IExpr -- ^ integer assignment
+    | ProcBeginBlock Label           -- ^ procedure entry
+    | ProcEndBlock   Label           -- ^ procedure exit
     | CallBlock      Label     Label Var Exprs Var -- ^ procedure call
-    -- | BAssignBlock Label Var {BExpr}
+    | BAssignBlock   Label Var BExpr -- ^ boolean assignment
+    | MallocBlock    Label Var IExpr -- ^ malloc assignment
+    | FreeBlock      Label IExpr     -- ^ free statement
+    | RefAssignBlock Label IExpr IExpr -- ^ reference assignment @*foo := bar@
+    | ContinueBlock  Label -- ^ while continue
+    | BreakBlock     Label -- ^ while break
   deriving (Eq, Show)
     
 -- | A directed flow edge
@@ -99,10 +104,14 @@ attr Program' Procs' Proc'
     -- scope in which a label is defined (global or local to a procedure)
     syn labelScope use {Map.union} {Map.empty} :: {Map.Map Label Scope}
 
+attr Stat'
+    -- lists of directly nested break and continue statements (only valid inside while-loops)
+    syn directBreaks use {++} {[]} :: {[Label]}
+    syn directContinues use {++} {[]} :: {[Label]}
+
 sem Program'
     | Program' stat. procs      = @procs.self
                procs.procs      = @procs.self
-
 
 ----------------------------------------------------------------------------------------
 -- Init
@@ -115,6 +124,12 @@ sem Stat'
     | IAssign'    lhs.init = @label
     | Call'       lhs.init = @labelCall
     | Seq'        lhs.init = @stat1.init
+    | BAssign'    lhs.init = @label
+    | Malloc'     lhs.init = @label
+    | RefAssign'  lhs.init = @label
+    | Free'       lhs.init = @label
+    | Continue'   lhs.init = @label
+    | Break'      lhs.init = @label
     
 ----------------------------------------------------------------------------------------
 -- Finals
@@ -123,10 +138,21 @@ sem Stat'
 sem Stat'
     | Skip'       lhs.finals = [@label]
     | IfThenElse' lhs.finals = @stat1.finals ++ @stat2.finals
-    | While'      lhs.finals = [@labelc]
+    | While'      lhs.finals = @labelc : @stat.directBreaks
+                  lhs.directBreaks = []
     | IAssign'    lhs.finals = [@label]
     | Call'       lhs.finals = [@labelReturn]
     | Seq'        lhs.finals = @stat2.finals
+    | BAssign'    lhs.finals = [@label]
+    | Malloc'     lhs.finals = [@label]
+    | RefAssign'  lhs.finals = [@label]
+    | Free'       lhs.finals = [@label]
+                  -- continue is never a final label. For a forward analysis, we come from a statement before,
+                  -- for a backward analysis, we come from the loop condition.
+    | Continue'   lhs.finals = [ ]
+                  -- the label of break is a final label of the enclosing while
+    | Break'      lhs.finals = [ ]
+                  lhs.directBreaks = [@label]
 
 ----------------------------------------------------------------------------------------
 -- Blocks
@@ -139,6 +165,12 @@ sem Stat'
     | IAssign'    lhs.blocks = [IAssignBlock @label @name @val.self]
     | Call'       lhs.blocks = [CallBlock @labelCall @labelReturn @name @params.self @out]
     | Seq'        lhs.blocks = @stat1.blocks ++ @stat2.blocks
+    | BAssign'    lhs.blocks = [ BAssignBlock @label @name @val.self ]
+    | Malloc'     lhs.blocks = [ MallocBlock @label @name @size.self ]
+    | RefAssign'  lhs.blocks = [ RefAssignBlock @label @ptr.self @val.self ]
+    | Free'       lhs.blocks = [ FreeBlock @label @ptr.self ]
+    | Continue'   lhs.blocks = [ ContinueBlock @label ]
+    | Break'      lhs.blocks = [ BreakBlock @label ]
 
 sem Proc'
     | Proc'       lhs.blocks = [ ProcBeginBlock @labelEntry, ProcEndBlock @labelExit ] ++ @stat.blocks
@@ -148,12 +180,12 @@ sem Proc'
 ----------------------------------------------------------------------------------------
 
 sem Stat'
-    | Skip'       lhs.flow = []
     | IfThenElse' lhs.flow = @stat1.flow ++ @stat2.flow ++ [Flow @labelc @stat1.init] 
                                 ++ [Flow @labelc @stat2.init]
     | While'      lhs.flow = @stat.flow ++ [Flow @labelc @stat.init]
                                 ++ zipWith Flow @stat.finals (repeat @labelc)
-    | IAssign'    lhs.flow = []
+                                ++ zipWith Flow @stat.directContinues (repeat @labelc)
+                  lhs.directContinues = []
     | Call'       loc.callee = findProc @name @lhs.procs
                   loc.lEntry    = labelEntry_Proc'_Proc' @callee
                   loc.lExit   = labelExit_Proc'_Proc' @callee
@@ -161,7 +193,8 @@ sem Stat'
                   lhs.flow = [ Flow @labelCall @lEntry
                              , Flow @lExit @labelReturn ]
     | Seq'        lhs.flow = @stat1.flow ++ @stat2.flow ++ zipWith Flow @stat1.finals (repeat @stat2.init)
-    
+    | Continue'   lhs.directContinues = [@label]
+
 sem Proc'
     | Proc'       lhs.flow = Flow @labelEntry @stat.init : zipWith Flow @stat.finals (repeat @labelExit)
                               ++ @stat.flow
@@ -172,9 +205,11 @@ sem Proc'
 ----------------------------------------------------------------------------------------
 
 sem Stat'
-    | IAssign' lhs.vars = Set.singleton @name
-    | Call'    lhs.vars = Set.insert @out @params.vars   
-    
+    | IAssign' lhs.vars = Set.insert @name @val.vars
+    | Call'    lhs.vars = Set.insert @out @params.vars
+    | BAssign' lhs.vars = Set.insert @name @val.vars
+    | Malloc'  lhs.vars = Set.singleton @name
+
 sem IExpr
     | Var lhs.vars = Set.singleton @name
     
@@ -210,12 +245,18 @@ nextUnique u = (u+1, u)
 
 -- | Returns all the labels in a block.
 labelsFromBlock :: Block -> [Label]
-labelsFromBlock (BBlock       label _)   = [label]
-labelsFromBlock (SkipBlock    label)     = [label]
-labelsFromBlock (IAssignBlock label _ _) = [label]
-labelsFromBlock (CallBlock lCall lRet _ _ _)   = [lCall, lRet]
-labelsFromBlock (ProcBeginBlock label)   = [label]
-labelsFromBlock (ProcEndBlock   label)   = [label]
+labelsFromBlock (BBlock       label _)       = [label]
+labelsFromBlock (SkipBlock    label)         = [label]
+labelsFromBlock (IAssignBlock label _ _)     = [label]
+labelsFromBlock (CallBlock lCall lRet _ _ _) = [lCall, lRet]
+labelsFromBlock (ProcBeginBlock label)       = [label]
+labelsFromBlock (ProcEndBlock   label)       = [label]
+labelsFromBlock (BAssignBlock   label _ _)   = [label]
+labelsFromBlock (MallocBlock    label _ _)   = [label]
+labelsFromBlock (FreeBlock      label _  )   = [label]
+labelsFromBlock (RefAssignBlock label _ _)   = [label]
+labelsFromBlock (ContinueBlock  label)       = [label]
+labelsFromBlock (BreakBlock     label)       = [label]
 
 -- | Returns all the labels in a collection of blocks
 labels :: Foldable.Foldable t => t Block -> [Label]

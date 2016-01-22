@@ -54,7 +54,8 @@ tokens :-
   free                             { \s -> TFree }
 
   int                              { \s -> TTyInt }
-
+  bool                             { \s -> TTyBool }
+  
   $alpha [$alpha $digit \_ \']*    { \s -> TIdent s }
   $digit+                          { \s -> TInt (read s) }
 
@@ -97,6 +98,7 @@ data Token  = TIdent String
             | TContinue
             | TBreak
             | TTyInt
+            | TTyBool
             deriving (Eq,Show)
 
 alex :: String -> [Token]

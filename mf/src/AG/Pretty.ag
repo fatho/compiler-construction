@@ -2,11 +2,6 @@
 This attribute grammar implements pretty-printing for expression, as needed for generating nice output.
 -}
 
-imports
-{
-import Data.Bool
-}
-
 {
 type Precedence = Int
 }
@@ -35,10 +30,11 @@ sem IExpr
     | Divide        lhs.pretty = precParens (@lhs.precedence > 7) (@left.pretty ++ " / " ++ @right.pretty)
                     left.precedence = 7
                     right.precedence = 8
-    -- | Deref         ptr  :: IExpr
+    | Deref         lhs.pretty = precParens (@lhs.precedence > 9) ("*" ++ @ptr.pretty)
+                    ptr.precedence = 9
 
 sem BExpr
-    | BConst        lhs.pretty = bool "true" "false" @val
+    | BConst        lhs.pretty = if @val then "true" else "false"
     | BVar          lhs.pretty = @name
     | LessThan      lhs.pretty = precParens (@lhs.precedence > 4) (@left.pretty ++ " < " ++ @right.pretty)
                     left.precedence = 5

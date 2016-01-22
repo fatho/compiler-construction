@@ -4,7 +4,7 @@
 module MonotoneFrameworks.Lattice where
     
 import           Control.Applicative
-
+import           Control.Monad (ap)
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as StrictMap
 
@@ -73,10 +73,13 @@ lifted = Lattice Bottom liftedJoin (defaultLeq liftedJoin) where
 
 instance Applicative Lifted where
   pure = Value
-  (Value f) <*> (Value x) = Value (f x)
-  Top       <*> _         = Top
-  _         <*> Top       = Top
-  _         <*> _         = Bottom
+  (<*>) = ap
+
+instance Monad Lifted where
+  return = pure
+  (Value x) >>= f = f x
+  Top       >>= _ = Top
+  Bottom    >>= _ = Bottom
 
 instance Num a => Num (Lifted a) where
   (+) = liftA2 (+)

@@ -27,9 +27,3 @@ ppMappingList mapping = list where
 -- | Pretty-prints both values of a pair.
 ppBoth :: (PP.Printable a, PP.Printable b) => (a, b) -> (PP.Doc, PP.Doc)
 ppBoth (x,y) = (PP.pp x, PP.pp y)
-
-instance PP.Printable [Char] where
-  pp = PP.showable
-
-instance Show a => PP.Printable (Set.Set a) where
-  pp = PP.showable

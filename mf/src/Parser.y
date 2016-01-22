@@ -52,6 +52,7 @@ import AttributeGrammar
       continue         { TContinue }
       break            { TBreak }
       tyint            { TTyInt }
+      tybool           { TTyBool }
 
 
 %left or
@@ -118,6 +119,7 @@ AExpr0 : int               { IConst $1 }
        | ident "[" AExpr "]" { Deref (Plus (Var $1) $3) }
 
 BExpr  : not BExpr         { Not $2 }
+       | tybool "(" ident ")" { BVar $3 }
        | BExpr and BExpr   { And $1 $3 }
        | BExpr or  BExpr   { Or $1 $3 }
        | BExpr "==" BExpr  { BEqual $1 $3 }

@@ -12,13 +12,17 @@ data Direction = Forward | Backward
 data TransferFunctions a = TransferFunctions
   { assignIExpr :: AG.Scope -> AG.Var -> AG.IExpr -> a -> a
   -- ^ integer assignment expression
+  , assignBExpr :: AG.Scope -> AG.Var -> AG.BExpr -> a -> a
+  -- ^ boolean assignment expression
+  , assignRef   :: AG.Scope -> AG.IExpr -> AG.IExpr -> a -> a
+  -- ^ reference assignment expression
   , booleanExpr :: AG.Scope -> AG.BExpr -> a -> a
   -- ^ boolean expression (in a condition)
   , skip        :: AG.Scope -> a -> a
   -- ^ skip statement
-  , procBegin   :: AG.Scope -> a -> a
+  , procEntry   :: AG.Scope -> a -> a
   -- ^ proc "is" block
-  , procEnd     :: AG.Scope -> a -> a
+  , procExit    :: AG.Scope -> a -> a
   -- ^ proc "end" block
   , callIn      :: AG.Scope -> AG.Proc' -> AG.Exprs -> AG.Var -> a -> a
   -- ^ call transfer function (flow to procedure)
@@ -26,6 +30,14 @@ data TransferFunctions a = TransferFunctions
   , callOut     :: AG.Scope -> AG.Proc' -> AG.Exprs -> AG.Var -> a -> a -> a
   -- ^ call transfer function (flow from procedure)
   -- This is for "return" when doing a forward analysis and for "call" when doing a backwards analysis
+  , malloc      :: AG.Scope -> AG.Var -> AG.IExpr -> a -> a
+  -- ^ allocation of memory
+  , free        :: AG.Scope -> AG.IExpr -> a -> a
+  -- ^ freeing memory
+  , continue    :: AG.Scope -> a -> a
+  -- ^ continuing with next loop iteration
+  , breakLoop   :: AG.Scope -> a -> a
+  -- ^ breaking out of loop
   }
 
 data Blueprint a = Blueprint
@@ -40,10 +52,16 @@ defaultTransfer = TransferFunctions
   { assignIExpr = \_ _ _ -> id
   , booleanExpr = \_ _ -> id
   , skip        = \_ -> id
-  , procBegin   = \_ -> id
-  , procEnd     = \_ -> id
+  , procEntry   = \_ -> id
+  , procExit    = \_ -> id
   , callIn      = \_ _ _ _ -> id
-  , callOut     = error "no sensible default for function return" 
+  , callOut     = error "no sensible default for function return"
+  , assignBExpr = \_ _ _ -> id
+  , assignRef   = \_ _ _ -> id
+  , malloc      = \_ _ _ -> id
+  , free        = \_ _ -> id
+  , continue    = \_ -> id
+  , breakLoop   = \_ -> id
   }
 
 -- | Takes a function generating a blueprint from the synthesized program attributes
@@ -65,11 +83,18 @@ buildMonotoneFramework mkBlueprint prog = inst where
   unaryBlockTransfer (AG.BBlock lbl bexpr)           = (lbl, booleanExpr (scopeOf lbl) bexpr)
   unaryBlockTransfer (AG.SkipBlock lbl)              = (lbl, skip (scopeOf lbl))
   unaryBlockTransfer (AG.IAssignBlock lbl var iexpr) = (lbl, assignIExpr (scopeOf lbl) var iexpr)
-  unaryBlockTransfer (AG.ProcBeginBlock lbl)         = (lbl, procBegin (scopeOf lbl))
-  unaryBlockTransfer (AG.ProcEndBlock lbl)           = (lbl, procEnd (scopeOf lbl))
+  unaryBlockTransfer (AG.ProcBeginBlock lbl)         = (lbl, procEntry (scopeOf lbl))
+  unaryBlockTransfer (AG.ProcEndBlock lbl)           = (lbl, procExit (scopeOf lbl))
   unaryBlockTransfer (AG.CallBlock lblcall lblret procName args retVar) =
     let lbl = if direction == Forward then lblcall else lblret
     in (lbl, callIn (scopeOf lbl) (findProc procName) args retVar)
+  
+  unaryBlockTransfer (AG.BAssignBlock lbl var bexpr)    = (lbl, assignBExpr (scopeOf lbl) var bexpr)
+  unaryBlockTransfer (AG.MallocBlock lbl var size)      = (lbl, malloc (scopeOf lbl) var size)
+  unaryBlockTransfer (AG.FreeBlock lbl addr)            = (lbl, free (scopeOf lbl) addr)
+  unaryBlockTransfer (AG.RefAssignBlock lbl addr iexpr) = (lbl, assignRef (scopeOf lbl) addr iexpr)
+  unaryBlockTransfer (AG.ContinueBlock lbl)             = (lbl, continue (scopeOf lbl))
+  unaryBlockTransfer (AG.BreakBlock lbl)                = (lbl, breakLoop (scopeOf lbl))
   
   -- | Returns for each block its binary transfer function.
   binaryBlockTransfer (AG.CallBlock lcall lret procName args retVar) =

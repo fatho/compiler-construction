@@ -4,5 +4,11 @@ begin
     end
     x := 2;
     y := 2;
-    call zero(x, y);
+    bla := x == y;
+    if bool(bla) then {
+        call zero(x, y);
+    } else {
+        call zero(y, y);
+    }
+    z := y;
 end

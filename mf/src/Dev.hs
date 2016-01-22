@@ -37,28 +37,28 @@ cp  = CP.constantPropagation
 run :: (PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
 run = runAnalysis'
 
-printInfo :: PP.Printable a => String -> a -> IO ()
-printInfo name val = putStrLn (name ++ ":") >> PP.renderIO_ 80 (PP.pp val) >> putStrLn ""
+printInfo :: String -> PP.Doc -> IO ()
+printInfo name val = putStrLn (name ++ ":") >> PP.renderIO_ 80 val >> putStrLn ""
 
 -- run some analysis by passing an analysis function and a 'show' function to display the result
 runAnalysis' :: (PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
 runAnalysis' analyze programName = do
   p <- parse programName
   let p' = toLabeledProgram p
-  printInfo "Program with Labels" p
+  printInfo "Program with Labels" $ PP.pp p
   let pSyn = synthesize p'
-  printInfo "Labels" (show $ labels $ blocks_Syn_Program' pSyn)
-  printInfo "Blocks" (show $ blocks_Syn_Program' pSyn)
-  printInfo "Flow" (show $ flow_Syn_Program' pSyn)
-  printInfo "InterFlow" (show $ interflow_Syn_Program' pSyn)
-  printInfo "Global Vars" (show $ globalVars_Syn_Program' pSyn)
+  printInfo "Labels" (PP.showable $ labels $ blocks_Syn_Program' pSyn)
+  printInfo "Blocks" (PP.showable $ blocks_Syn_Program' pSyn)
+  printInfo "Flow" (PP.showable $ flow_Syn_Program' pSyn)
+  printInfo "InterFlow" (PP.showable $ interflow_Syn_Program' pSyn)
+  printInfo "Global Vars" (PP.showable $ globalVars_Syn_Program' pSyn)
   let mf  = analyze p'
       emf = MF.embellish (Context.callstrings 2) mf 
       fp  = MF.maximumFixedPoint emf
       collapsedFp = fmap (MF.collapse $ MF.lattice mf) fp
-  printInfo "Result of the analysis" fp
-  printInfo "Collapsed results" collapsedFp  
-  printInfo "Extremal" $ MF.extremalValue mf
+  printInfo "Result of the analysis" $ PP.pp fp
+  printInfo "Collapsed results" $ PP.pp collapsedFp  
+  printInfo "Extremal" $ PP.pp $ MF.extremalValue mf
   writeGraph programName (blocks_Syn_Program' pSyn) (MF.flow mf) (MF.extremalLabels mf) collapsedFp
 
 -- parse program

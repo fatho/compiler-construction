@@ -36,24 +36,38 @@ tshow = T.pack . show
 escapeRecordChars :: Text -> Text
 escapeRecordChars = T.replace "<" "\\<" . T.replace ">" "\\>" . T.replace "|" "\\|"
 
+prettyExpr :: AG.Expr -> Text
+prettyExpr expr = escapeRecordChars (T.pack $ AG.pretty_Syn_Expr $ AG.synthesize expr)
+
+prettyIExpr :: AG.IExpr -> Text
+prettyIExpr = prettyExpr . AG.I
+
+prettyBExpr :: AG.BExpr -> Text
+prettyBExpr = prettyExpr . AG.B
+
 -- | Converts a block to a part of a DOT record label showing the code and associated labels.
 -- The field containing the code is named "code", if there is only one label, that field is
 -- named "label", for calls, the label fields are named "labelcall" and "labelret".
 blockCodeLabel :: AG.Block -> Text
-blockCodeLabel (AG.BBlock l expr)           = "<code> " 
-  <> escapeRecordChars (T.pack $ AG.pretty_Syn_BExpr $ AG.synthesize expr) 
-  <> "|<label> " <> tshow l
+blockCodeLabel (AG.BBlock l expr)           = "<code> " <> prettyBExpr expr <> "|<label> " <> tshow l
 blockCodeLabel (AG.SkipBlock l)             = "<code> skip|<label> " <> tshow l
-blockCodeLabel (AG.IAssignBlock l var expr) = "<code> " <> T.pack var <> " = "
-  <> escapeRecordChars (T.pack $ AG.pretty_Syn_IExpr $ AG.synthesize expr) 
-  <> "|<label> " <> tshow l 
+blockCodeLabel (AG.IAssignBlock l var expr) = "<code> " <> T.pack var <> " := " <> prettyIExpr expr <> "|<label> " <> tshow l 
 blockCodeLabel (AG.ProcBeginBlock l)        = "<code> is|<label> " <> tshow l
 blockCodeLabel (AG.ProcEndBlock l)          = "<code> end|<label> " <> tshow l
 blockCodeLabel (AG.CallBlock lc lr n es o)  = "<code> " <> T.pack n <> "(" 
-  <> foldr (\e rs -> escapeRecordChars (T.pack $ AG.pretty_Syn_Expr $ AG.synthesize e) 
-                      <> ", " <> rs
-           ) (T.pack o) es 
+  <> foldr (\e rs -> prettyExpr e <> ", " <> rs) (T.pack o) es 
   <> ")|{<labelcall> " <> tshow lc <> "|<labelret> " <> tshow lr <> "}"  
+blockCodeLabel (AG.BAssignBlock   l var expr)   = 
+  "<code> " <> T.pack var <> " := " <> prettyBExpr expr <> "|<label> " <> tshow l 
+blockCodeLabel (AG.MallocBlock    l var size) = 
+  "<code> malloc(" <> T.pack var <> ", " <> prettyIExpr size <> ")|<label> " <> tshow l
+blockCodeLabel (AG.FreeBlock      l ptr)      = "<code> free(" <> prettyIExpr ptr <> ")|<label> " <> tshow l
+blockCodeLabel (AG.RefAssignBlock l (AG.Plus (AG.Var var) idx) val) = 
+  "<code> " <> T.pack var <> "[" <> prettyIExpr idx <> "] := " <> prettyIExpr val <> "|<label> " <> tshow l
+blockCodeLabel (AG.RefAssignBlock l addr val) = 
+  "<code> " <> prettyIExpr (AG.Deref addr) <> " := " <> prettyIExpr val <> "|<label> " <> tshow l
+blockCodeLabel (AG.ContinueBlock  l)       = "<code> continue|<label> " <> tshow l
+blockCodeLabel (AG.BreakBlock     l)       = "<code> break|<label> " <> tshow l
 
 -- | If the block label is in the supplied list of extremal labels, returns attributes to highlight
 -- the node. Intended for monoidal composition, i.e.

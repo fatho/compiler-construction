@@ -23,7 +23,7 @@ instance (PP.Printable c, PP.Printable a) => PP.Printable (Context c a) where
 
 -- | Encompasses the information required to embellish a monotone framework with context.
 data Embellished c l a = Embellished
-  { liftVal :: a -> Context c a
+  { liftExtremal :: a -> Context c a
     -- ^ lifts a single value into the new context
   , procIn  :: l -> (a -> a) -> Context c a -> Context c a
     -- ^ handles procedure entry, receives the underlying transfer function for that label
@@ -66,7 +66,7 @@ embellish emb mf = new where
     , flow           = flow mf
     , interFlow      = interFlow mf
     , extremalLabels = extremalLabels mf 
-    , extremalValue  = liftVal (extremalValue mf)
+    , extremalValue  = liftExtremal (extremalValue mf)
     , transfer       = embTransfer
     , interReturn    = embInterTransfer
     , labels         = labels mf
