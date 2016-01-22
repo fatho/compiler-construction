@@ -1,7 +1,5 @@
 module Dev where
 
-import qualified Data.Map as M
-import qualified Data.List as L
 import Data.Monoid
 
 import AttributeGrammar
@@ -18,7 +16,7 @@ import qualified MonotoneFrameworks as MF
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Util.Visual as Vis
+import qualified Util.Graphviz as Viz
 
 -- | An analysis is an instance of monotone frameworks yielding some result @a@ for each label.  
 type Analysis a = MF.MF Label a
@@ -30,9 +28,10 @@ ghci> run slv "fib"
 
 --}
 
+slv :: Program' -> Analysis SLV.VarSet
 slv = SLV.stronglyLiveVariables
 
---cp :: Program' -> Analysis CP.VarMap
+cp :: Program' -> Analysis CP.VarMap
 cp  = CP.constantPropagation
 
 run :: (PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
@@ -73,4 +72,4 @@ parse programName = do
 writeGraph :: (PP.Printable a) => String -> [Block] -> [Flow Label] -> [Label] -> MF.Fixpoint Label a -> IO ()
 writeGraph programName blocks flow ex fp = do
   let fileName = "./examples/"++programName++".dot"
-  TIO.writeFile fileName (Vis.makeDot blocks flow (Vis.highlightExtremal ex <> Vis.codeWithLabels >>= Vis.withResults fp) (T.pack programName))
+  TIO.writeFile fileName (Viz.makeDot blocks flow (Viz.highlightExtremal ex <> Viz.codeWithLabels >>= Viz.withResults fp) (T.pack programName))

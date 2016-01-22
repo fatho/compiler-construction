@@ -3,21 +3,12 @@
 {-# LANGUAGE RecordWildCards, GeneralizedNewtypeDeriving #-}
 module Analyses.Context.Callstrings where
 
-import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Set (Set)
-import qualified Data.Set as Set
-import           Data.Maybe
 
-import AttributeGrammar (Flow(..), InterFlow(..))
-import MonotoneFrameworks.Description
 import MonotoneFrameworks.Embellished
 import MonotoneFrameworks.Lattice
 
 import qualified CCO.Printing as PP
-import qualified Util.Printing as UPP
-
-import Debug.Trace
 
 -- | Type of a callstring parameterized by the type of labels.
 newtype CallString l = CallString { getCallString :: [l] }
@@ -35,11 +26,11 @@ pushCall k l = CallString . take k . (l:) . getCallString
 callstrings :: Ord l => Int -> Lattice a -> Embellished (CallString l) l a
 callstrings k Lattice{..} = Embellished (Context . Map.singleton callRoot) pin pout where
   pushContext l = Context . Map.insert callRoot bottom . Map.mapKeysWith join (pushCall k l) . getContext
-  lookup cs = Map.findWithDefault bottom cs . getContext
+  lookupCtx cs = Map.findWithDefault bottom cs . getContext
 
-  pin lblCall transfer = trace "call" $ pushContext lblCall . fmap transfer
-  pout lblCall lblRet transfer ctxBefore ctxProc = trace "ret" $ 
-    Context $ Map.mapWithKey (\c v -> transfer v (lookup (pushCall k lblCall c) ctxProc)) (getContext ctxBefore)
+  pin lblCall transfer = pushContext lblCall . fmap transfer
+  pout lblCall _ transfer ctxBefore ctxProc = 
+    Context $ Map.mapWithKey (\c v -> transfer v (lookupCtx (pushCall k lblCall c) ctxProc)) (getContext ctxBefore)
 
 instance PP.Printable l => PP.Printable (CallString l) where
   pp cs = PP.brackets (PP.sepBy (map PP.pp $ getCallString cs) (PP.text ", "))

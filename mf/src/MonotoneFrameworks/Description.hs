@@ -3,7 +3,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 module MonotoneFrameworks.Description where
 
-import Control.Arrow ((***))
 import qualified Data.Map.Strict as StrictMap
 
 import MonotoneFrameworks.Lattice

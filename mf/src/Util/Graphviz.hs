@@ -1,7 +1,7 @@
 {- | Provides functionality to render the flow graph of a program optionally with additonal information. 
 -}
 {-# LANGUAGE OverloadedStrings #-}
-module Util.Visual
+module Util.Graphviz
   ( highlightExtremal
   , codeWithLabels
   , blockCodeLabel
@@ -11,9 +11,7 @@ module Util.Visual
 
 import Data.Monoid
 
-import qualified Data.List as List
-import qualified Data.Map.Strict as Map 
-import qualified Data.Set as Set 
+import qualified Data.Map.Strict as Map
 import qualified AttributeGrammar as AG
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -102,11 +100,11 @@ makeDot blocks flow attrs graphName = T.unlines graphLines where
   
   -- | returns node id's (with sub-specifier) for given flow
   showFlow from to = case (blockMap Map.! from, blockMap Map.! to) of
-    (AG.CallBlock lc lr _ _ _, AG.ProcBeginBlock le) -> (tshow lc <> ":labelcall", tshow le <> ":code", callEdge)
-    (AG.ProcBeginBlock le, AG.CallBlock lc lr _ _ _) -> (tshow le <> ":code", tshow lc <> ":labelcall", callEdge)
+    (AG.CallBlock lc _ _ _ _, AG.ProcBeginBlock le) -> (tshow lc <> ":labelcall", tshow le <> ":code", callEdge)
+    (AG.ProcBeginBlock le, AG.CallBlock lc _ _ _ _) -> (tshow le <> ":code", tshow lc <> ":labelcall", callEdge)
     -- call label is used for identifying a call block node in the graph
-    (AG.CallBlock lc lr _ _ _, AG.ProcEndBlock le) -> (tshow lc <> ":labelret", tshow le <> ":code", retEdge)
-    (AG.ProcEndBlock le, AG.CallBlock lc lr _ _ _) -> (tshow le <> ":code", tshow lc <> ":labelret", retEdge)
+    (AG.CallBlock lc _ _ _ _, AG.ProcEndBlock le) -> (tshow lc <> ":labelret", tshow le <> ":code", retEdge)
+    (AG.ProcEndBlock le, AG.CallBlock lc _ _ _ _) -> (tshow le <> ":code", tshow lc <> ":labelret", retEdge)
     (b1, b2) -> (tshow (idLabel b1) <> ":code", tshow (idLabel b2) <> ":code", Map.empty)
  
   -- formatting for a call edge
@@ -114,9 +112,9 @@ makeDot blocks flow attrs graphName = T.unlines graphLines where
   -- formatting for a return edge
   retEdge  = Map.fromList [ ("color", "red")  ]
   -- list of all graph edges
-  edges = [ "n" <> from <> " -> n" <> to <> attrText attrs <> ";" 
+  edges = [ "n" <> from <> " -> n" <> to <> attrText edgeAttrs <> ";" 
           | AG.Flow a b <- flow
-          , let (from, to, attrs) = showFlow a b
+          , let (from, to, edgeAttrs) = showFlow a b
           ]
   -- lines of complete graph code
   graphLines =

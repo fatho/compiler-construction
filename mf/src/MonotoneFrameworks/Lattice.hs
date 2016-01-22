@@ -8,10 +8,7 @@ import           Control.Applicative
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as StrictMap
 
-import           Data.Maybe (fromMaybe)
-
 import qualified CCO.Printing as PP
-import qualified Util.Printing as UPP
 
 -- | A lattice that can be explicitly passed around.
 -- We decided against modelling lattices as a type classe because sometimes
@@ -112,7 +109,7 @@ instance Integral a => Integral (Lifted a) where
       Value (a,b) -> (Value a, Value b)
       Top -> (Top, Top)
 
-instance Show a => PP.Printable (Lifted a) where
+instance PP.Printable a => PP.Printable (Lifted a) where
   pp Top       = PP.text "T"
-  pp (Value x) = PP.showable x
+  pp (Value x) = PP.pp x
   pp Bottom    = PP.text "_|_" 

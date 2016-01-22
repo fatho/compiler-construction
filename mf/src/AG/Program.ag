@@ -4,8 +4,6 @@ Except for some additions, this file is roughly the same as the one distributed 
 
 imports
 {
-import qualified Data.Maybe as Maybe
-
 import CCO.Printing
 }
 
@@ -117,7 +115,7 @@ evalIExpr e env = go e where
   go (Minus l r) = go l - go r
   go (Times l r) = go l * go r
   go (Divide l r) = go l `div` go r
-  go (Deref ptr) = error "Deref not implemented"
+  go (Deref _) = error "Deref not implemented"
   
 instance Printable Program where
   pp = showable

@@ -3,16 +3,12 @@
 {-# LANGUAGE RecordWildCards, BangPatterns #-}
 module MonotoneFrameworks.Algorithm where
 
-import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
 
 import AttributeGrammar (Flow(..), InterFlow(..))
 
 import MonotoneFrameworks.Description
 import MonotoneFrameworks.Lattice
-
-import Debug.Trace
 
 -- | Takes a monotone framework and returns the corresponding fixpoint.
 maximumFixedPoint :: (Show l, Ord l) => MF l a ->  Fixpoint l a
@@ -45,7 +41,7 @@ maximumFixedPoint mf = mfp where
     -- not a return, just transfer context value at "from" label to effect value
     Nothing -> transfer mf lbl (lookupSolution lbl solution)
     -- flowing out of return value: apply binary transfer function (lret == from f)
-    Just (InterFlow lcall lentry lexit lret) -> 
+    Just (InterFlow lcall _ _ lret) -> 
       interReturn mf lcall lret (lookupSolution lcall solution) (lookupSolution lret solution)
 
   iter []     solution = solution -- no more edges to process, we're done

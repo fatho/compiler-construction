@@ -4,18 +4,14 @@ import Control.Monad
 import System.IO.Error
 import qualified Data.List as List
 
-import qualified Lexer
-import qualified Parser
 import qualified Dev
-import qualified AttributeGrammar as AG
-import qualified MonotoneFrameworks as MF
-import qualified Analyses.ConstantPropagation as CP
 
 parts :: [(String, String -> IO ())]
 parts = 
     [ ( "cp", Dev.run Dev.cp )
     , ( "slv", Dev.run Dev.slv) ]
 
+main :: IO ()
 main = do
   putStrLn "Enter example name or leave empty to quit: "
   name <- getLine

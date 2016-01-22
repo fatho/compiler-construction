@@ -27,6 +27,7 @@ executable mf
                        Parser
                        Dev
                        AttributeGrammar
+                       Analyses.Builder
                        Analyses.ConstantPropagation
                        Analyses.StronglyLiveVariables
                        Analyses.Context
@@ -35,8 +36,8 @@ executable mf
                        MonotoneFrameworks.Description
                        MonotoneFrameworks.Embellished
                        MonotoneFrameworks.Lattice
+                       Util.Graphviz
                        Util.Printing
-                       Util.Visual
   build-depends:       base >= 4 && < 5,
                        containers == 0.5.*,
                        array == 0.5.*,
@@ -44,6 +45,7 @@ executable mf
                        mtl,
                        text,
                        transformers
+  ghc-options:         -Wall
   ghc-prof-options:    -prof
                        -fprof-auto
                        -fprof-cafs

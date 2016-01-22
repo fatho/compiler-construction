@@ -2,24 +2,16 @@
 -}
 module Analyses.ConstantPropagation where
 
-import Control.Applicative
-
+import qualified Analyses.Builder as Builder
 import qualified AttributeGrammar as AG
-
 import qualified MonotoneFrameworks.Lattice as L
-
-import MonotoneFrameworks.Description
-import MonotoneFrameworks.Embellished
-
-import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
-import Data.Maybe
-import Data.Coerce
-
-import qualified CCO.Printing as PP
+import           MonotoneFrameworks.Description
 import qualified Util.Printing as UPP
 
-import Debug.Trace
+import qualified CCO.Printing as PP
+import           Data.Coerce
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 
 -- | The lattice of integer values with an additional 'L.Top' value. 
 -- To facilitate reuse, 'L.Lifted' also provides a 'L.Bottom', but that
@@ -51,70 +43,44 @@ varMapLattice = coerce $ L.strictMapUnion ztLattice
 -- note that the above is a safe coercion making use of GHC's coercible feature for newtypes
 
 -- | Transfer function for assignments.
-assignmentTransfer :: AG.Var -> AG.IExpr -> UnaryTransfer VarMap
-assignmentTransfer vSet expr env =
+assignmentTransfer :: AG.Scope -> AG.Var -> AG.IExpr -> UnaryTransfer VarMap
+assignmentTransfer _ vSet expr env =
     bindVar vSet (AG.evalIExpr expr (\v -> lookupVar v env)) env
 
 -- | Transfer function for a function call (unary)
-callTransfer :: Set.Set AG.Var -> [(AG.Var, AG.Expr)] -> UnaryTransfer VarMap
-callTransfer localVars args outerEnv = foldr assignArg removeLocals args where
+callTransfer :: AG.Scope -> AG.Proc' -> AG.Exprs -> AG.Var -> UnaryTransfer VarMap
+callTransfer scope proc args _ outerEnv = foldr assignArg removeLocals paramsWithArgs where
+  paramsWithArgs = zip (AG.inp_Proc'_Proc' proc) args
   -- remove all locals from the environment before passing it to the procedure
-  removeLocals = Set.foldr unbindVar outerEnv localVars
+  removeLocals = Set.foldr unbindVar outerEnv (AG.localVars scope)
   -- bind variable in proc environment, but read value from outer environment
-  assignArg (v, AG.I e) procEnv = bindVar v (AG.evalIExpr e (\v -> lookupVar v outerEnv)) procEnv
+  assignArg (vSet, AG.I e) procEnv = bindVar vSet (AG.evalIExpr e (\v -> lookupVar v outerEnv)) procEnv
+  assignArg (_, AG.B _) _ = error "boolean variables not supported"
 
 -- | Transfer function for returning from a call (binary)
-procReturnTransfer :: AG.Var -> AG.Var -> BinaryTransfer VarMap
-procReturnTransfer outerVar procRetVar outerEnv procEnv =
+returnTransfer :: AG.Scope -> AG.Proc' -> AG.Exprs -> AG.Var -> BinaryTransfer VarMap
+returnTransfer _ proc _ outerVar outerEnv procEnv =
   -- lookup value assigned to ret var in procedure and assign it to the
-  -- variable receiving the result from the call.
-  bindVar outerVar (lookupVar procRetVar procEnv) outerEnv
+  -- variable receiving the result from the call. 
+  bindVar outerVar (lookupVar procRetVar procEnv) outerEnv 
+  where
+    procRetVar = AG.out_Proc'_Proc' proc
+
+blueprint :: AG.Syn_Program' -> Builder.Blueprint VarMap
+blueprint pSyn = Builder.Blueprint
+  { Builder.direction = Builder.Forward
+  , Builder.lattice   = varMapLattice
+  , Builder.extremalValue  = VarMap $ Map.fromList [ (v, L.Top) | v <- Set.toList $ AG.globalVars_Syn_Program' pSyn ]
+  , Builder.transferFunctions = Builder.defaultTransfer
+      { Builder.assignIExpr = assignmentTransfer
+      , Builder.callIn      = callTransfer
+      , Builder.callOut     = returnTransfer
+      }
+  }
 
 -- | Returns an analysis instance for a given labelled program.
 constantPropagation :: AG.Program' -> MF AG.Label VarMap
-constantPropagation prog = inst where
-
-  pSyn = AG.synthesize prog
-  
-  findProc p = AG.findProc p (AG.procs_Program'_Program' prog)
-  
-  scopeOf lbl = AG.labelScope_Syn_Program' pSyn Map.! lbl
-  localVars lbl = case scopeOf lbl of
-      AG.Global  _  -> Set.empty
-      AG.Local _ vs -> vs
-  
-  -- | Returns for each block its unary transfer function.
-  unaryBlockTransfer :: AG.Block -> [(AG.Label, UnaryTransfer VarMap)]
-  unaryBlockTransfer (AG.IAssignBlock l v expr) = [(l, assignmentTransfer v expr)]
-  unaryBlockTransfer (AG.CallBlock lcall lret proc args out) =
-    let callee = findProc proc
-        callAssigns = zip (AG.inp_Proc'_Proc' callee) args
-    in [ (lcall, callTransfer (localVars lcall) callAssigns) ]
-  unaryBlockTransfer b = zip (AG.labelsFromBlock b) (repeat id)
-  
-  -- | Returns for each block its binary transfer function.
-  binaryBlockTransfer :: AG.Block -> [(AG.Label, BinaryTransfer VarMap)]
-  binaryBlockTransfer (AG.CallBlock lcall lret proc args out) =
-    let callee = findProc proc
-    in [ (lret, procReturnTransfer out (AG.out_Proc'_Proc' callee))]
-  binaryBlockTransfer b = []
-
-  -- build a map from labels to the corresponding transfer functions
-  transferMap = Map.fromList $ AG.blocks_Syn_Program' pSyn >>= unaryBlockTransfer
-  returnTransferMap = Map.fromList $ AG.blocks_Syn_Program' pSyn >>= binaryBlockTransfer
-   
-  inst = MF
-    { lattice        = varMapLattice
-    -- forward analysis:
-    , flow           = AG.flow_Syn_Program' pSyn
-    , interFlow      = AG.interflow_Syn_Program' pSyn
-    , extremalLabels = [ AG.init_Syn_Program' pSyn ]
-    
-    , extremalValue  = VarMap $ Map.fromList [ (v, L.Top) | v <- Set.toList $ AG.globalVars_Syn_Program' pSyn ]
-    , transfer       = \l -> transferMap Map.! l
-    , interReturn    = \_ lret -> returnTransferMap Map.! lret
-    , labels         = AG.labels $ AG.blocks_Syn_Program' pSyn
-    }
+constantPropagation = Builder.buildMonotoneFramework blueprint
 
 instance PP.Printable VarMap where
   pp = UPP.ppMappingFlat . map UPP.ppBoth . Map.toList . getVarMap

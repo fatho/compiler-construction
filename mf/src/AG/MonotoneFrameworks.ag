@@ -57,6 +57,10 @@ type InterFlows = [InterFlow Label]
 data Scope 
     = Global    (Set.Set Var) -- ^ global scope
     | Local Var (Set.Set Var) -- ^ local scope of procedure
+
+localVars :: Scope -> Set.Set Var
+localVars (Global _)   = Set.empty
+localVars (Local _ vs) = vs
 }
 
 attr Program' Stat'

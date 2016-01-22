@@ -3,18 +3,15 @@
 {-# LANGUAGE RecordWildCards, GeneralizedNewtypeDeriving, StandaloneDeriving #-}
 module MonotoneFrameworks.Embellished where
 
-import           Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
-import           Data.Set (Set)
-import qualified Data.Set as Set
-import           Data.Maybe
-
-import AttributeGrammar (Flow(..), InterFlow(..))
-import MonotoneFrameworks.Description
-import MonotoneFrameworks.Lattice
+import qualified AttributeGrammar as AG
+import           MonotoneFrameworks.Description
+import           MonotoneFrameworks.Lattice
+import qualified Util.Printing as UPP
 
 import qualified CCO.Printing as PP
-import qualified Util.Printing as UPP
+import           Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 
 -- | A context is a function (here represented by a map) from some context type to the actual lattice 
 -- of the underlying monotone framework. 
@@ -53,7 +50,7 @@ embellish emb mf = new where
   Embellished{..} = emb (lattice mf)
 
   -- labels which flow into a procedure
-  toProc = Set.fromList $ map fromOuter $ interFlow mf
+  toProc = Set.fromList $ map AG.fromOuter $ interFlow mf
   
   -- wrap normal flow (wrap calls)
   embTransfer l val
