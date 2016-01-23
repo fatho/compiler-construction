@@ -239,7 +239,7 @@ sem Proc'
     | Proc'    lhs.labelScope = Map.fromList $ zip (labels @stat.blocks) (repeat $ Local @name @loc.localVars)
 
 {
--- | Generate next unqiue label. 
+-- | Generate next unique label. 
 nextUnique :: Int -> (Int, Int)
 nextUnique u = (u+1, u)
 

@@ -5,6 +5,7 @@ Except for some additions, this file is roughly the same as the one distributed 
 imports
 {
 import Control.Monad
+import Control.Applicative
 import CCO.Printing
 }
 
@@ -108,7 +109,7 @@ type Exprs = [Expr]
 -- We need this to be polymorphic, which is the reason why evaluation is
 -- not implemented as attribute grammar.
 -- AGs apparently support polymorphic Nonterminals, but no polymorphic attributes. 
-evalIExpr :: (Monad f) => (Var -> f Int) -> (Int -> f Int) -> IExpr -> f Int
+evalIExpr :: (Applicative f, Monad f) => (Var -> f Int) -> (Int -> f Int) -> IExpr -> f Int
 evalIExpr varInt deref = go where
   go (IConst v) = pure v
   go (Var name) = varInt name
@@ -120,7 +121,7 @@ evalIExpr varInt deref = go where
 
 -- | Evaluates an 'BExpr' in an arbitrary numerical context.
 -- We need this to be polymorphic as well (see above).
-evalBExpr :: (Monad f) => (Var -> f Bool) -> (Var -> f Int) -> (Int -> f Int) -> BExpr -> f Bool
+evalBExpr :: (Applicative f, Monad f) => (Var -> f Bool) -> (Var -> f Int) -> (Int -> f Int) -> BExpr -> f Bool
 evalBExpr varBool varInt deref = go where
   go (BConst v) = pure v
   go (BVar name) = varBool name

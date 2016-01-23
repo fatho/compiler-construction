@@ -55,7 +55,7 @@ ztLattice = L.lifted
 
 -- | The 'VarMap' lattice instance.
 varMapLattice :: L.Lattice VarMap
-varMapLattice = coerce $ L.strictMapUnion ztLattice
+varMapLattice = coerce $ (L.strictMapUnion ztLattice :: L.Lattice (Map.Map AG.Var ValT))
 -- note that the above is a safe coercion making use of GHC's coercible feature for newtypes
 
 evalIExpr :: VarMap -> AG.IExpr -> L.Lifted Val

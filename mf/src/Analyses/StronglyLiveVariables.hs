@@ -50,7 +50,7 @@ returnTransfer scope proc _ outerVar (VarSet outerEnv)
 blueprint :: AG.Syn_Program' -> Builder.Blueprint VarSet
 blueprint pSyn = Builder.Blueprint
   { Builder.direction         = Builder.Backward
-  , Builder.lattice           = coerce L.setUnion
+  , Builder.lattice           = coerce (L.setUnion :: L.Lattice (Set.Set AG.Var))
   , Builder.extremalValue     = VarSet $ AG.globalVars_Syn_Program' pSyn
   , Builder.transferFunctions = Builder.defaultTransfer
       { Builder.assignIExpr = \_ v expr -> assignmentTransfer v (AG.I expr)

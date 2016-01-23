@@ -14,6 +14,6 @@ begin
         r := y;
     else 
     {
-        r := 0; 
+        r := 1; 
     }        
 end

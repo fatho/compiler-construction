@@ -34,15 +34,15 @@ slv = SLV.stronglyLiveVariables
 cp :: Program' -> Analysis CP.VarMap
 cp  = CP.constantPropagation
 
-run :: (PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
+run :: (PP.Printable a) => (Program' -> Analysis a) -> String -> String -> IO ()
 run = runAnalysis'
 
 printInfo :: String -> PP.Doc -> IO ()
 printInfo name val = putStrLn (name ++ ":") >> PP.renderIO_ 80 val >> putStrLn ""
 
 -- run some analysis by passing an analysis function and a 'show' function to display the result
-runAnalysis' :: (PP.Printable a) => (Program' -> Analysis a) -> String -> IO ()
-runAnalysis' analyze programName = do
+runAnalysis' :: (PP.Printable a) => (Program' -> Analysis a) -> String -> String ->  IO ()
+runAnalysis' analyze programName analysisName = do
   p <- parse programName
   let p' = toLabeledProgram p
   printInfo "Program with Labels" $ PP.pp p
@@ -59,7 +59,7 @@ runAnalysis' analyze programName = do
   printInfo "Result of the analysis" $ PP.pp fp
   printInfo "Collapsed results" $ PP.pp collapsedFp  
   printInfo "Extremal" $ PP.pp $ MF.extremalValue mf
-  writeGraph programName (blocks_Syn_Program' pSyn) (MF.flow mf) (MF.extremalLabels mf) collapsedFp
+  writeGraph programName analysisName (blocks_Syn_Program' pSyn) (MF.flow mf) (MF.extremalLabels mf) collapsedFp
 
 -- parse program
 
@@ -69,7 +69,7 @@ parse programName = do
   content <- readFile fileName
   return . happy . alex $ content
 
-writeGraph :: (PP.Printable a) => String -> [Block] -> [Flow Label] -> [Label] -> MF.Fixpoint Label a -> IO ()
-writeGraph programName blocks flow ex fp = do
-  let fileName = "./examples/"++programName++".dot"
+writeGraph :: (PP.Printable a) => String -> String -> [Block] -> [Flow Label] -> [Label] -> MF.Fixpoint Label a -> IO ()
+writeGraph programName analysisName blocks flow ex fp = do
+  let fileName = "./examples/"++programName++"_"++analysisName++".dot"
   TIO.writeFile fileName (Viz.makeDot blocks flow (Viz.highlightExtremal ex <> Viz.codeWithLabels >>= Viz.withResults fp) (T.pack programName))

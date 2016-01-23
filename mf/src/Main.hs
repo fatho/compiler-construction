@@ -6,7 +6,7 @@ import qualified Data.List as List
 
 import qualified Dev
 
-parts :: [(String, String -> IO ())]
+parts :: [(String, String -> String -> IO ())]
 parts = 
     [ ( "cp", Dev.run Dev.cp )
     , ( "slv", Dev.run Dev.slv) ]
@@ -19,6 +19,6 @@ main = do
     putStrLn "Enter analysis name ('cp', 'slv'): "
     analysis <- getLine
     case List.lookup analysis parts of
-      Just doIt -> doIt name `catch` (\(SomeException e) -> print e)
+      Just doIt -> doIt name analysis `catch` (\(SomeException e) -> print e)
       Nothing -> putStrLn "analysis does not exist"
     main
