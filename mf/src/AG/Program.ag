@@ -4,7 +4,7 @@ Except for some additions, this file is roughly the same as the one distributed 
 
 imports
 {
-import Control.Applicative
+import Control.Monad
 import CCO.Printing
 }
 
@@ -112,10 +112,10 @@ evalIExpr :: (Monad f) => (Var -> f Int) -> (Int -> f Int) -> IExpr -> f Int
 evalIExpr varInt deref = go where
   go (IConst v) = pure v
   go (Var name) = varInt name
-  go (Plus l r) = liftA2 (+) (go l) (go r)
-  go (Minus l r) = liftA2 (-) (go l) (go r)
-  go (Times l r) = liftA2 (*) (go l) (go r)
-  go (Divide l r) = liftA2 div (go l) (go r)
+  go (Plus l r) = liftM2 (+) (go l) (go r)
+  go (Minus l r) = liftM2 (-) (go l) (go r)
+  go (Times l r) = liftM2 (*) (go l) (go r)
+  go (Divide l r) = liftM2 div (go l) (go r)
   go (Deref x)    = go x >>= deref
 
 -- | Evaluates an 'BExpr' in an arbitrary numerical context.
@@ -124,15 +124,15 @@ evalBExpr :: (Monad f) => (Var -> f Bool) -> (Var -> f Int) -> (Int -> f Int) ->
 evalBExpr varBool varInt deref = go where
   go (BConst v) = pure v
   go (BVar name) = varBool name
-  go (LessThan      l r) = liftA2 (<) (goInt l) (goInt r)
-  go (GreaterThan   l r) = liftA2 (>) (goInt l) (goInt r)
-  go (LessEqual     l r) = liftA2 (<=) (goInt l) (goInt r)
-  go (GreaterEqual  l r) = liftA2 (>=) (goInt l) (goInt r)
-  go (IEqual        l r) = liftA2 (==) (goInt l) (goInt r)
-  go (BEqual        l r) = liftA2 (==) (go l) (go r)
-  go (And           l r) = liftA2 (&&) (go l) (go r)
-  go (Or            l r) = liftA2 (||) (go l) (go r)
-  go (Not           val) = fmap not (go val)
+  go (LessThan      l r) = liftM2 (<) (goInt l) (goInt r)
+  go (GreaterThan   l r) = liftM2 (>) (goInt l) (goInt r)
+  go (LessEqual     l r) = liftM2 (<=) (goInt l) (goInt r)
+  go (GreaterEqual  l r) = liftM2 (>=) (goInt l) (goInt r)
+  go (IEqual        l r) = liftM2 (==) (goInt l) (goInt r)
+  go (BEqual        l r) = liftM2 (==) (go l) (go r)
+  go (And           l r) = liftM2 (&&) (go l) (go r)
+  go (Or            l r) = liftM2 (||) (go l) (go r)
+  go (Not           val) = liftM not (go val)
   
   goInt = evalIExpr varInt deref
 
