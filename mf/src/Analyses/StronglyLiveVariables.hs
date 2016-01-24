@@ -58,7 +58,8 @@ blueprint pSyn = Builder.Blueprint
       , Builder.callIn      = returnTransfer
       , Builder.callOut     = callTransfer
       , Builder.assignBExpr = \_ v expr -> assignmentTransfer v (AG.B expr)
-      , Builder.assignRef   = \_ _ expr -> VarSet . Set.union (AG.vars_Syn_IExpr $ AG.synthesize expr) . getVarSet
+      , Builder.assignRef   = \_ addr expr -> VarSet . Set.union (AG.vars_Syn_IExpr $ AG.synthesize addr) 
+                                                . Set.union (AG.vars_Syn_IExpr $ AG.synthesize expr) . getVarSet
       , Builder.malloc      = \_ v size -> VarSet . Set.union (AG.vars_Syn_IExpr $ AG.synthesize size) . Set.delete v . getVarSet
       , Builder.free        = \_ addr -> VarSet . Set.union (AG.vars_Syn_IExpr $ AG.synthesize addr) . getVarSet
       }
