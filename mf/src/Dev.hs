@@ -34,15 +34,15 @@ slv = SLV.stronglyLiveVariables
 cp :: Program' -> Analysis CP.VarMap
 cp  = CP.constantPropagation
 
-run :: (PP.Printable a) => (Program' -> Analysis a) -> String -> String -> IO ()
+run :: (PP.Printable a) => (Program' -> Analysis a) -> String -> String -> Int -> IO ()
 run = runAnalysis'
 
 printInfo :: String -> PP.Doc -> IO ()
 printInfo name val = putStrLn (name ++ ":") >> PP.renderIO_ 80 val >> putStrLn ""
 
 -- run some analysis by passing an analysis function and a 'show' function to display the result
-runAnalysis' :: (PP.Printable a) => (Program' -> Analysis a) -> String -> String ->  IO ()
-runAnalysis' analyze programName analysisName = do
+runAnalysis' :: (PP.Printable a) => (Program' -> Analysis a) -> String -> String -> Int ->  IO ()
+runAnalysis' analyze programName analysisName contextDepth = do
   p <- parse programName
   let p' = toLabeledProgram p
   printInfo "Program with Labels" $ PP.pp p
@@ -53,7 +53,7 @@ runAnalysis' analyze programName analysisName = do
   printInfo "InterFlow" (PP.showable $ interflow_Syn_Program' pSyn)
   printInfo "Global Vars" (PP.showable $ globalVars_Syn_Program' pSyn)
   let mf  = analyze p'
-      emf = MF.embellish (Context.callstrings 2) mf 
+      emf = MF.embellish (Context.callstrings contextDepth) mf 
       fp  = MF.maximumFixedPoint emf
       collapsedFp = fmap (MF.collapse $ MF.lattice mf) fp
   printInfo "Result of the analysis" $ PP.pp fp

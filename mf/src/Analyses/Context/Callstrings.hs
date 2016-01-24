@@ -25,7 +25,7 @@ pushCall k l = CallString . take k . (l:) . getCallString
 -- | Provides the function to enhance a given lattice and monotone framework with call strings.
 callstrings :: Ord l => Int -> Lattice a -> Embellished (CallString l) l a
 callstrings k Lattice{..} = Embellished (Context . Map.singleton callRoot) pin pout where
-  pushContext l = Context . Map.insert callRoot bottom . Map.mapKeysWith join (pushCall k l) . getContext
+  pushContext l = Context . Map.insertWith join callRoot bottom . Map.mapKeysWith join (pushCall k l) . getContext
   lookupCtx cs = Map.findWithDefault bottom cs . getContext
 
   pin lblCall transfer = pushContext lblCall . fmap transfer
