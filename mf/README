@@ -1,17 +1,45 @@
+# Monotone Frameworks
 
-Original authors: Yorick Sijsling, Jarno le Conte and Nico Naus
+Authors: 
+	- Jordy van Dortmond, 3894479
+	- Fabian Thorand, 5607000
+Date:   25 January 2016
 
-Running the code
-================
+## How to Build
 
-Besides ghc, you will need happy, alex and uuagc to build all the files. 
-You should be able to compile the code with `make all`. 
-To clean up, rebuild and start ghci in the Dev module all at once, run `make
-clean dev`.
+We developed this solution using GHC 7.10.3. In theory, GHC 7.8.4 should also work.
 
-Once you're in ghci in the Dev module, you can run different analyses (that
-you first need to develop). 
+First, some platform independent preparation steps are necessary to install the required dependencies.
+All commands (unless stated otherwise) assume that the current directory is the one containing
+the `mf.cabal` file.
 
-The file AttributeGrammar.ag contains the datatype declarations for storing
-programs and expressions in the language.
+(1) Setup sandbox (optional, but recommended) and install dependencies
 
+        $ cabal sandbox init
+        $ cabal update
+        $ cabal install --only-dependencies
+
+(2) If not yet installed, install `uuagc` either globally or in the sandbox
+
+        $ cabal install uuagc
+
+The third step requires the `make` tool, but alternatively, 
+the commands found inside the `Makefile` can also be run manually.
+
+(3) Build project
+
+  (a) If `uuagc` is compiled globally
+
+          $ make
+
+  (b) otherwise
+
+          $ cabal exec make
+
+      This will setup the `PATH` accordingly before executing `make`.
+
+## Our Examples
+
+The folder `examples` contains the example programs in the While language that can be
+analysed using the executable in this project. The resulting DOT graphs are also created
+in that directory.
